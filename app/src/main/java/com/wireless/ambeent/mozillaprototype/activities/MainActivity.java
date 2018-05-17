@@ -2,23 +2,19 @@ package com.wireless.ambeent.mozillaprototype.activities;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.widget.Toast;
 
-import com.google.firebase.perf.FirebasePerformance;
 import com.wireless.ambeent.mozillaprototype.R;
 import com.wireless.ambeent.mozillaprototype.adapters.ChatAdapter;
 import com.wireless.ambeent.mozillaprototype.businesslogic.ChatHandler;
+import com.wireless.ambeent.mozillaprototype.businesslogic.HotspotController;
+import com.wireless.ambeent.mozillaprototype.businesslogic.IRest;
+import com.wireless.ambeent.mozillaprototype.businesslogic.ServiceGenerator;
 import com.wireless.ambeent.mozillaprototype.customviews.CustomRecyclerView;
 import com.wireless.ambeent.mozillaprototype.customviews.EditTextV2;
 import com.wireless.ambeent.mozillaprototype.helpers.Constants;
@@ -26,10 +22,13 @@ import com.wireless.ambeent.mozillaprototype.pojos.ConnectedDeviceObject;
 import com.wireless.ambeent.mozillaprototype.pojos.MessageObject;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -40,15 +39,18 @@ public class MainActivity extends AppCompatActivity {
     //Chat RecyclerView adapter
     private static ChatAdapter mChatAdapter;
 
-    //The list that contains the messages to be shown on the screen
-    private List<MessageObject> mMessages = new ArrayList<>();
+    //The set that contains the messages to be shown on the screen
+    private HashSet<MessageObject> mMessages = new HashSet<>();
 
     //The list that contains the IP address of other devices that are connected to hotspot
     private List<ConnectedDeviceObject> mHotspotNeighboursList = new ArrayList<>();
 
 
-    //The object that parses messages, insert them to local database and send them.
+    //The class that parses messages, insert them to local database and send them.
     private ChatHandler mChatHandler;
+
+    //The class that controls Hotspot and finds connected devices
+    private HotspotController mHotspotController;
 
     //A flag the check whether the user is connected to a hotspot that is created by the app
     private boolean isConnectedToAppHotspot = false;
@@ -71,8 +73,73 @@ public class MainActivity extends AppCompatActivity {
 
         Log.i(TAG, "onCreate: TEST  " + sub);
 
+        activityInitialization();
+
+
+
+
+
+
+
+
+
+
+
+        IRest taskService = ServiceGenerator.createService(IRest.class, "asd");
+        Call<ResponseBody> loginCall  = taskService.listTasks("asd");
+
+        loginCall.enqueue(new );
+
+        loginPost(loginCall);
 
     }
+
+
+  /*  public void loginPost(Call<ResponseBody> call)
+    {
+        try
+        {
+            call.enqueue(new Callback<ResultUser>()
+            {
+                @Override
+                public void onResponse(Call<ResultUser> call, Response<ResultUser> response)
+                {
+                    if (response.isSuccessful())
+                    {
+                        resultUser = response.body();
+                        technicianList = resultUser.technicians;
+                        progressDialog.cancel();
+                        if (resultUser.technicians.size() != 0){
+                            Login2 login2Frag = new Login2();
+                            login2Frag.setData(technicianList);
+                            myActivity.startFragment(login2Frag);
+                        }else {
+                            Toast.makeText(myActivity, "Hatalı firma kodu ya da teknisyen bulunamadı", Toast.LENGTH_SHORT).show();
+                        }
+
+
+                    }
+                    else
+                    {
+                        Toast.makeText(myActivity, "Hatalı firma kodu", Toast.LENGTH_SHORT).show();
+                        progressDialog.cancel();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<ResultUser> call, Throwable t)
+                {
+                    // something went completely south (like no internet connection)
+                    Toast.makeText(myActivity, "Hata 4675", Toast.LENGTH_SHORT).show();
+                    progressDialog.cancel();
+                }
+            });
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }*/
 
     private void activityInitialization(){
 
@@ -89,7 +156,10 @@ public class MainActivity extends AppCompatActivity {
         mChatRecyclerView.setAdapter(mChatAdapter);
 
         //ChatHandler init
-        mChatHandler = new ChatHandler(this);
+        mChatHandler = new ChatHandler(this, mMessages);
+
+        //HotspotController init
+        mHotspotController = new HotspotController(this, mHotspotNeighboursList);
     }
 
     //Checks the hotspot flag. Returns it after creating a suitable Toast.
@@ -130,6 +200,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         isVisible = true;
+        notifyChatAdapter();
+
         Log.i(TAG, "Lifecycle: onResume");
         super.onResume();
     }

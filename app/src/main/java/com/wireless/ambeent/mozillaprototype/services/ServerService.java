@@ -6,6 +6,7 @@ import android.os.IBinder;
 
 public class ServerService extends Service {
 
+    private static final String TAG = "ServerService";
 
 
     public ServerService() {
