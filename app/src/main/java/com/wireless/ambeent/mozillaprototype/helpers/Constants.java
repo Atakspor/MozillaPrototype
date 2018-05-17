@@ -15,15 +15,7 @@ public class Constants {
     public static final String SHARED_PREF = "AMBEENT_MINI";
 
     //Used for user information storage.
-    public static final String CURRENT_USER_ID = "Current_User_Id";
-    public static final String CURRENT_USER_USERNAME = "Current_User_Username";
-    public static final String LAST_LATITUDE = "Last_Latitude";
-    public static final String LAST_LONGITUDE = "Last_Longitude";
-    public static final String CURRENT_USER_PASSWORD = "Current_User_Password";
-    public static final String CURRENT_USER_EMAIL = "Current_User_Email";
-    public static final String CURRENT_USER_TAG = "Current_User_Tag";
-    public static final String CURRENT_DEVICE_ID ="Current_Device_Id";
-    public static final String CURRENT_DEVICE_MAC = "Device_Mac";
+    public static final String USER_PHONE_NUMBER = "User_Phone_Number";
 
     //Intent extra names
     public static final String INTENT_EXTRA_CHANNEL = "Channel";

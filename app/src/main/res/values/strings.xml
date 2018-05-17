@@ -23,8 +23,7 @@
     <string name="alert_channel_success">"Channel has been changed."</string>
 
     <!-- Strings related to spinners -->
-    <string name="spinner_brand">Choose your brand</string>
-    <string name="spinner_model">Choose your model</string>
+    <string name="toast_hotspot_warning">You are not connected to a HotSpot</string>
 
     <!-- Strings related to RouterInfoActivity -->
     <string name="router_channel">%1$d</string>

@@ -15,6 +15,8 @@ import android.widget.TextView;
 import com.wireless.ambeent.mozillaprototype.R;
 import com.wireless.ambeent.mozillaprototype.pojos.MessageObject;
 
+import org.w3c.dom.Text;
+
 import java.util.List;
 
 public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.MyViewHolder>{
@@ -45,23 +47,33 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.MyViewHolder>
     @Override
     public void onBindViewHolder(final MyViewHolder holder, int position) {
 
+        MessageObject messageObject = mMessageObjectList.get(position);
+        String senderName = messageObject.getSender();
+        String message = messageObject.getMessage();
+
+        holder.senderNameTextView.setText(senderName);
+        holder.senderMessageTextView.setText(message);
+
     }
 
     // Return the size of the dataset
     @Override
     public int getItemCount() {
-        return 44;
+        return mMessageObjectList.size();
     }
 
     public class MyViewHolder extends RecyclerView.ViewHolder {
 
 
-        public ConstraintLayout containerConstraintLayout;
+        public TextView senderNameTextView, senderMessageTextView;
 
 
 
         public MyViewHolder(View view) {
             super(view);
+
+            senderNameTextView = (TextView) view.findViewById(R.id.textView_SenderName);
+            senderMessageTextView = (TextView) view.findViewById(R.id.textView_SenderMessage);
 
         }
 
