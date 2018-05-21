@@ -13,6 +13,35 @@
         <item name="windowNoTitle">true</item>
     </style>
 
+    <style name="AppTheme.NoActionBarBlue">
+        <item name="colorPrimary">@color/colorBlue2</item>
+        <item name="colorPrimaryDark">@color/colorBlue1</item>
+        <item name="colorAccent">@color/colorBlue2</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+
+        <item name="android:textColorHint">@color/colorWhite</item>
+    </style>
+
+    <style name="AppTheme.NoActionBarGray">
+        <item name="colorPrimary">@color/colorCream</item>
+        <item name="colorPrimaryDark">@color/colorGray</item>
+        <item name="colorAccent">@color/colorDarkGray</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="WhiteTheme.NoActionBar" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/colorCream</item>
+        <item name="colorPrimaryDark">@color/colorBlue</item>
+        <item name="colorAccent">@color/colorGreenPantone</item>
+        <item name="colorControlNormal">@color/colorCream</item>
+        <item name="colorControlActivated">@color/colorCream</item>
+        <item name="colorControlHighlight">@color/colorCream</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />

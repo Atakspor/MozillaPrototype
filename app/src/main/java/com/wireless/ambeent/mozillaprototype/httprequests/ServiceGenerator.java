@@ -1,4 +1,4 @@
-package com.wireless.ambeent.mozillaprototype.businesslogic;
+package com.wireless.ambeent.mozillaprototype.httprequests;
 
 import java.util.concurrent.TimeUnit;
 

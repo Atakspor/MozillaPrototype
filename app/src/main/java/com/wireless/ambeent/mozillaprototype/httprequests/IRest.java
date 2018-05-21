@@ -1,4 +1,4 @@
-package com.wireless.ambeent.mozillaprototype.businesslogic;
+package com.wireless.ambeent.mozillaprototype.httprequests;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;

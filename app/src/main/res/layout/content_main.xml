@@ -12,12 +12,10 @@
         android:id="@+id/recyclerView_Chat"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginBottom="24dp"
-        android:visibility="visible"
+        android:layout_marginBottom="4dp"
         app:layout_constraintBottom_toTopOf="@+id/view_line"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <View
@@ -62,7 +60,7 @@
                 android:layout_marginBottom="12dp"
                 android:background="@android:color/transparent"
                 android:ems="10"
-                android:gravity="top|left"
+                android:gravity="top|start"
                 android:hint="@string/hint_type_message"
                 android:inputType="textMultiLine|textCapSentences" />
         </RelativeLayout>

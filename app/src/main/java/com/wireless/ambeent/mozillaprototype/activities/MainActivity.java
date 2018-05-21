@@ -7,28 +7,25 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import com.wireless.ambeent.mozillaprototype.R;
 import com.wireless.ambeent.mozillaprototype.adapters.ChatAdapter;
 import com.wireless.ambeent.mozillaprototype.businesslogic.ChatHandler;
 import com.wireless.ambeent.mozillaprototype.businesslogic.HotspotController;
-import com.wireless.ambeent.mozillaprototype.businesslogic.IRest;
-import com.wireless.ambeent.mozillaprototype.businesslogic.ServiceGenerator;
 import com.wireless.ambeent.mozillaprototype.customviews.CustomRecyclerView;
 import com.wireless.ambeent.mozillaprototype.customviews.EditTextV2;
 import com.wireless.ambeent.mozillaprototype.helpers.Constants;
 import com.wireless.ambeent.mozillaprototype.pojos.ConnectedDeviceObject;
 import com.wireless.ambeent.mozillaprototype.pojos.MessageObject;
+import com.wireless.ambeent.mozillaprototype.server.ServerController;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import okhttp3.ResponseBody;
-import retrofit2.Call;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -40,11 +37,10 @@ public class MainActivity extends AppCompatActivity {
     private static ChatAdapter mChatAdapter;
 
     //The set that contains the messages to be shown on the screen
-    private HashSet<MessageObject> mMessages = new HashSet<>();
+    private List<MessageObject> mMessages = new ArrayList<>();
 
     //The list that contains the IP address of other devices that are connected to hotspot
     private List<ConnectedDeviceObject> mHotspotNeighboursList = new ArrayList<>();
-
 
     //The class that parses messages, insert them to local database and send them.
     private ChatHandler mChatHandler;
@@ -62,8 +58,9 @@ public class MainActivity extends AppCompatActivity {
 
         ButterKnife.bind(this);
 
+        //Set up the PHONE_NUMBER for globall access
         SharedPreferences sharedPreferences  = getSharedPreferences(Constants.SHARED_PREF, MODE_PRIVATE);
-        sharedPreferences.edit().putString(Constants.USER_PHONE_NUMBER, "+905352989257").apply();
+        Constants.PHONE_NUMBER = sharedPreferences.getString(Constants.USER_PHONE_NUMBER, "");
 
         //TEST STUFFFFFFFFFFFFFFFFFFFF
         String str = "bla!/bla/bla/";
@@ -85,12 +82,12 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        IRest taskService = ServiceGenerator.createService(IRest.class, "asd");
+       /* IRest taskService = ServiceGenerator.createService(IRest.class, "asd");
         Call<ResponseBody> loginCall  = taskService.listTasks("asd");
 
         loginCall.enqueue(new );
 
-        loginPost(loginCall);
+        loginPost(loginCall);*/
 
     }
 
@@ -148,6 +145,7 @@ public class MainActivity extends AppCompatActivity {
 
         //Initializing chat recyclerview
         CustomRecyclerView mChatRecyclerView = ButterKnife.findById(this, R.id.recyclerView_Chat);
+        mChatRecyclerView.setShouldIgnoreTouch(false);
         LinearLayoutManager mLayoutManager = new LinearLayoutManager(this);
         mLayoutManager.setStackFromEnd(true);
         mChatAdapter = new ChatAdapter(this, mMessages);
@@ -171,10 +169,16 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    @OnClick(R.id.imageButton_SendMessage)
-    public void sendMessage(){
+    public void notifyChatAdapter(){
+        mChatAdapter.notifyDataSetChanged();
+        CustomRecyclerView mChatRecyclerView = ButterKnife.findById(this, R.id.recyclerView_Chat);
+        mChatRecyclerView.scrollToPosition(mMessages.size() -1);
+    }
 
-        //
+    @OnClick(R.id.imageButton_SendMessage)
+    public void sendMessage(View view){
+
+        //Get the text message from EditText
         EditTextV2 messageEditText = (EditTextV2) ButterKnife.findById(this, R.id.editText_Message);
         String message = messageEditText.getText().toString();
 
@@ -193,14 +197,15 @@ public class MainActivity extends AppCompatActivity {
         Log.i(TAG, "sendMessage: " + message);
     }
 
-    public static void notifyChatAdapter(){
-        mChatAdapter.notifyDataSetChanged();
-    }
+
+
 
     @Override
     protected void onResume() {
         isVisible = true;
         notifyChatAdapter();
+
+        ServerController.getInstance().startServer();
 
         Log.i(TAG, "Lifecycle: onResume");
         super.onResume();
@@ -217,6 +222,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         isVisible = false;
+
+        ServerController.getInstance().stopServer();
+
         Log.i(TAG, "Lifecycle: onPause ");
         super.onPause();
     }

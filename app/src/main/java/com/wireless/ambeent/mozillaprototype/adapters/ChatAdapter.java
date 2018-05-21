@@ -51,6 +51,7 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.MyViewHolder>
         String senderName = messageObject.getSender();
         String message = messageObject.getMessage();
 
+        //Show the messages and their senders.
         holder.senderNameTextView.setText(senderName);
         holder.senderMessageTextView.setText(message);
 

@@ -17,6 +17,9 @@ public class Constants {
     //Used for user information storage.
     public static final String USER_PHONE_NUMBER = "User_Phone_Number";
 
+    //Used for global access in app. Initialized in MainActivity
+    public static  String PHONE_NUMBER;
+
     //Intent extra names
     public static final String INTENT_EXTRA_CHANNEL = "Channel";
     public static final String INTENT_EXTRA_SSID = "Ssid";

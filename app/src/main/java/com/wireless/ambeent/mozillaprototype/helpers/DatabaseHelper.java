@@ -15,7 +15,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static DatabaseHelper dbInstance;
 
     // Database Version. Increment this manually when database schema changes.
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3;
 
     // Database Name
     private static final String DATABASE_NAME = "MozillaProMessenger";

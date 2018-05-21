@@ -64,9 +64,9 @@ public class HotspotController {
     public void createHotspot(){
 
         WifiManager wifiManager = (WifiManager) mContext.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        WifiConfiguration wifiConfiguration = new WifiConfiguration();
-        wifiConfiguration.SSID = "MyDummySSID";
-        mWifiApManager.setWifiApEnabled(wifiConfiguration, true);
+        WifiConfiguration wifiConfiguration = initHotspotConfig();
+
+    //    mWifiApManager.setWifiApEnabled(wifiConfiguration, true);
     }
 
     //Pings the network and sets the Connected Device list accordingly
@@ -74,6 +74,30 @@ public class HotspotController {
 
         WifiPinger wifiPinger = new WifiPinger(mContext, mConnDevObjList);
         wifiPinger.startScanning();
+    }
+
+    //Creates a WifiConfiguration for hotspot initialization and returns it
+    private WifiConfiguration initHotspotConfig(){
+
+        WifiConfiguration wifiConfig = new WifiConfiguration();
+
+        wifiConfig.SSID = "Test Hotspot";
+
+        // must be 8 length
+        wifiConfig.preSharedKey = "abcd1234";
+
+        //wifiConfig.hiddenSSID = true;
+
+        wifiConfig.status = WifiConfiguration.Status.ENABLED;
+        wifiConfig.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
+        wifiConfig.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
+        wifiConfig.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        wifiConfig.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
+        wifiConfig.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
+        wifiConfig.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
+
+
+        return wifiConfig;
     }
 
     public List<String> getmScannedHotspotSsidList() {

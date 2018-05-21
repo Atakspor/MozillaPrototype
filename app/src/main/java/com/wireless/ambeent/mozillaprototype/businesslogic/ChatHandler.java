@@ -20,31 +20,52 @@ public class ChatHandler {
     private static final String TAG = "ChatHandler";
 
     private Context mContext;
-    private HashSet<MessageObject> mMessages;
+    private List<MessageObject> mMessages;
 
     private SharedPreferences mSharedPreferences;
 
-    public ChatHandler(Context mContext,HashSet<MessageObject> mMessages  ) {
+    public ChatHandler(Context mContext, List<MessageObject> mMessages  ) {
         this.mContext = mContext;
         this.mMessages = mMessages;
 
         mSharedPreferences  = mContext.getSharedPreferences(Constants.SHARED_PREF, mContext.MODE_PRIVATE);
 
+        //Show the messages when constructed
+        updateMessageList(getMessagesFromSQLite());
     }
+
 
     public void sendMessage(String message){
 
         MessageObject messageObject = createMessageObject(message);
         insertMessageToSQLite(messageObject);
 
-        updateMessageSet();
+        updateMessageList(getLastMessageFromSQLite());
     }
 
-    //Updates message HashSet with the messages from SQLite and notifies ChatAdapter
-    public void updateMessageSet(){
+    //Updates message List with the given message list
+    public void updateMessageList(ArrayList<MessageObject> savedMessages){
 
-        mMessages.addAll(getMessagesFromSQLite());
-        MainActivity.notifyChatAdapter();
+        //Check the message sender and receiver. If one of them matches with this users phone number or is a group message, add it to list to show on the screen.
+        for(MessageObject messageObject : savedMessages){
+            if(messageObject.getReceiver().equalsIgnoreCase(Constants.USER_PHONE_NUMBER)
+                    || messageObject.getSender().equalsIgnoreCase(Constants.USER_PHONE_NUMBER)
+                    || messageObject.getReceiver().equalsIgnoreCase("")) mMessages.add(messageObject);
+        }
+
+        ((MainActivity)mContext).notifyChatAdapter();
+
+    }
+
+    //Updates the message list with only the given object
+    public void updateMessageList(MessageObject message){
+
+        //Check the message sender and receiver. If one of them matches with this users phone number or is a group message, add it to list to show on the screen.
+        if(message.getReceiver().equalsIgnoreCase(Constants.USER_PHONE_NUMBER)
+                || message.getSender().equalsIgnoreCase(Constants.USER_PHONE_NUMBER)
+                || message.getReceiver().equalsIgnoreCase("")) mMessages.add(message);
+
+        ((MainActivity)mContext).notifyChatAdapter();
 
     }
 
@@ -72,6 +93,7 @@ public class ChatHandler {
         if(isTargetedMessage){
             //TODO: We are cheating here by using only turkish phone numbers right now. fix it
 
+            //Get the target of the message by parsing the message
             receiver = message.substring(1, 13);
             actualMessage = message.substring(14, message.length()-1);
 
@@ -85,10 +107,42 @@ public class ChatHandler {
         return messageObject;
     }
 
-    //Gets saved messages from SQLite database and populates them
-    public HashSet<MessageObject> getMessagesFromSQLite(){
+    //Gets only the last message inserted
+    public MessageObject getLastMessageFromSQLite(){
 
-        HashSet<MessageObject> messages = new HashSet<>();
+        //Get necessary columns from SQLiite and create MessageObjects
+        String table = DatabaseHelper.TABLE_MESSAGES;
+        String[] columns = {DatabaseHelper.KEY_MESSAGE_ID,
+                DatabaseHelper.KEY_MESSAGE,
+                DatabaseHelper.KEY_SENDER,
+                DatabaseHelper.KEY_RECEIVER};
+
+        Cursor cursor = DatabaseHelper.getInstance(mContext).getReadableDatabase()
+                .query(table, columns, null, null, null, null, null, null);
+
+        //Populate the messages HashSet
+        if(cursor.moveToLast()){
+            //Constructing every message and their attributes here.
+            String messageId = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_MESSAGE_ID));
+            String message = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_MESSAGE));
+            String sender = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_SENDER));
+            String receiver = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_RECEIVER));
+
+            MessageObject messageObject = new MessageObject(messageId, message, sender, receiver);
+
+            return messageObject;
+        }
+
+        //Something is wrong...
+        return null;
+
+
+    }
+
+    //Gets saved messages from SQLite database and populates them
+    public ArrayList<MessageObject> getMessagesFromSQLite(){
+
+        ArrayList<MessageObject> messages = new ArrayList<>();
 
         //Get necessary columns from SQLiite and create MessageObjects
         String table = DatabaseHelper.TABLE_MESSAGES;

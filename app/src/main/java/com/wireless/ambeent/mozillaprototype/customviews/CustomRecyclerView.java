@@ -42,4 +42,6 @@ public class CustomRecyclerView extends RecyclerView {
     public void setShouldIgnoreTouch(boolean shouldIgnoreTouch) {
         this.shouldIgnoreTouch = shouldIgnoreTouch;
     }
+
+
 }

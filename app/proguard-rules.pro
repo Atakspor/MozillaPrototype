@@ -28,3 +28,7 @@
 }
 # Ignore annotation used for build tooling.
 -dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
+
+-keep class android.support.design.widget.** { *; }
+-keep interface android.support.design.widget.** { *; }
+-dontwarn android.support.design.**
