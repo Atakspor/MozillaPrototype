@@ -2,18 +2,21 @@ package com.wireless.ambeent.mozillaprototype.activities;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.widget.CompoundButton;
 import android.widget.Toast;
 
 import com.wireless.ambeent.mozillaprototype.R;
 import com.wireless.ambeent.mozillaprototype.adapters.ChatAdapter;
 import com.wireless.ambeent.mozillaprototype.businesslogic.ChatHandler;
-import com.wireless.ambeent.mozillaprototype.businesslogic.HotspotController;
+import com.wireless.ambeent.mozillaprototype.businesslogic.WifiApController;
 import com.wireless.ambeent.mozillaprototype.customviews.CustomRecyclerView;
 import com.wireless.ambeent.mozillaprototype.customviews.EditTextV2;
 import com.wireless.ambeent.mozillaprototype.helpers.Constants;
@@ -46,10 +49,13 @@ public class MainActivity extends AppCompatActivity {
     private ChatHandler mChatHandler;
 
     //The class that controls Hotspot and finds connected devices
-    private HotspotController mHotspotController;
+    private WifiApController mWifiApController;
 
     //A flag the check whether the user is connected to a hotspot that is created by the app
     private boolean isConnectedToAppHotspot = false;
+
+    //General purpose handler
+    private Handler mHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +67,8 @@ public class MainActivity extends AppCompatActivity {
         //Set up the PHONE_NUMBER for globall access
         SharedPreferences sharedPreferences  = getSharedPreferences(Constants.SHARED_PREF, MODE_PRIVATE);
         Constants.PHONE_NUMBER = sharedPreferences.getString(Constants.USER_PHONE_NUMBER, "");
+
+        Log.i(TAG, "onCreate: PHONE NUMBER: " + Constants.PHONE_NUMBER);
 
         //TEST STUFFFFFFFFFFFFFFFFFFFF
         String str = "bla!/bla/bla/";
@@ -143,6 +151,8 @@ public class MainActivity extends AppCompatActivity {
         //Toolbar setup
         setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
 
+        mHandler = new Handler();
+
         //Initializing chat recyclerview
         CustomRecyclerView mChatRecyclerView = ButterKnife.findById(this, R.id.recyclerView_Chat);
         mChatRecyclerView.setShouldIgnoreTouch(false);
@@ -154,10 +164,40 @@ public class MainActivity extends AppCompatActivity {
         mChatRecyclerView.setAdapter(mChatAdapter);
 
         //ChatHandler init
-        mChatHandler = new ChatHandler(this, mMessages);
+        mChatHandler = new ChatHandler(this, mMessages, mHotspotNeighboursList);
 
-        //HotspotController init
-        mHotspotController = new HotspotController(this, mHotspotNeighboursList);
+        //WifiApController init
+        mWifiApController = new WifiApController(this, mHotspotNeighboursList);
+
+
+        final SwitchCompat mSwitchCompat = ButterKnife.findById(this, R.id.switch_Hotspot);
+        mSwitchCompat.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+                //Enabling and disabling hotspot is long. Disable the switch for five seconds to prevent spamming
+                mSwitchCompat.setEnabled(false);
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        mSwitchCompat.setEnabled(true);
+                        ServerController.getInstance().startServer();
+
+                    }
+                }, 5000);
+
+
+                if(isChecked){
+                    mWifiApController.turnOnHotspot();
+                } else {
+                    mWifiApController.turnOffHotspot();
+                }
+
+                Toast.makeText(MainActivity.this, isChecked + "", Toast.LENGTH_SHORT).show();
+
+            }
+        });
+
     }
 
     //Checks the hotspot flag. Returns it after creating a suitable Toast.
@@ -169,6 +209,7 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
+    //Notifies the ChatAdapter for new elements and scrolls RecyclerView to bottom
     public void notifyChatAdapter(){
         mChatAdapter.notifyDataSetChanged();
         CustomRecyclerView mChatRecyclerView = ButterKnife.findById(this, R.id.recyclerView_Chat);
@@ -176,7 +217,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @OnClick(R.id.imageButton_SendMessage)
-    public void sendMessage(View view){
+    public void sendMessage(){
 
         //Get the text message from EditText
         EditTextV2 messageEditText = (EditTextV2) ButterKnife.findById(this, R.id.editText_Message);
@@ -194,7 +235,6 @@ public class MainActivity extends AppCompatActivity {
         //Pass it to ChatHandler to prepare and send the message.
         mChatHandler.sendMessage(message);
 
-        Log.i(TAG, "sendMessage: " + message);
     }
 
 
@@ -205,7 +245,6 @@ public class MainActivity extends AppCompatActivity {
         isVisible = true;
         notifyChatAdapter();
 
-        ServerController.getInstance().startServer();
 
         Log.i(TAG, "Lifecycle: onResume");
         super.onResume();

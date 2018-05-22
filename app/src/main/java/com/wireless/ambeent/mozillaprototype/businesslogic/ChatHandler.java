@@ -4,10 +4,13 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.util.Log;
 
 import com.wireless.ambeent.mozillaprototype.activities.MainActivity;
+import com.wireless.ambeent.mozillaprototype.helpers.ActivityHelpers;
 import com.wireless.ambeent.mozillaprototype.helpers.Constants;
 import com.wireless.ambeent.mozillaprototype.helpers.DatabaseHelper;
+import com.wireless.ambeent.mozillaprototype.pojos.ConnectedDeviceObject;
 import com.wireless.ambeent.mozillaprototype.pojos.MessageObject;
 
 import java.util.ArrayList;
@@ -21,26 +24,32 @@ public class ChatHandler {
 
     private Context mContext;
     private List<MessageObject> mMessages;
+    private List<ConnectedDeviceObject> mConnectedDeviceList;
 
-    private SharedPreferences mSharedPreferences;
 
-    public ChatHandler(Context mContext, List<MessageObject> mMessages  ) {
+    public ChatHandler(Context mContext, List<MessageObject> mMessages, List<ConnectedDeviceObject> mConnectedDeviceList  ) {
         this.mContext = mContext;
         this.mMessages = mMessages;
+        this.mConnectedDeviceList = mConnectedDeviceList;
 
-        mSharedPreferences  = mContext.getSharedPreferences(Constants.SHARED_PREF, mContext.MODE_PRIVATE);
 
         //Show the messages when constructed
         updateMessageList(getMessagesFromSQLite());
     }
 
 
+    //Put the necessary methods in order to send a message
     public void sendMessage(String message){
+
 
         MessageObject messageObject = createMessageObject(message);
         insertMessageToSQLite(messageObject);
 
-        updateMessageList(getLastMessageFromSQLite());
+        //Update message list by this message
+        updateMessageList(messageObject);
+
+        Log.i(TAG, "sendMessage: " +messageObject);
+
     }
 
     //Updates message List with the given message list
@@ -48,8 +57,8 @@ public class ChatHandler {
 
         //Check the message sender and receiver. If one of them matches with this users phone number or is a group message, add it to list to show on the screen.
         for(MessageObject messageObject : savedMessages){
-            if(messageObject.getReceiver().equalsIgnoreCase(Constants.USER_PHONE_NUMBER)
-                    || messageObject.getSender().equalsIgnoreCase(Constants.USER_PHONE_NUMBER)
+            if(messageObject.getReceiver().equalsIgnoreCase(Constants.PHONE_NUMBER)
+                    || messageObject.getSender().equalsIgnoreCase(Constants.PHONE_NUMBER)
                     || messageObject.getReceiver().equalsIgnoreCase("")) mMessages.add(messageObject);
         }
 
@@ -61,8 +70,8 @@ public class ChatHandler {
     public void updateMessageList(MessageObject message){
 
         //Check the message sender and receiver. If one of them matches with this users phone number or is a group message, add it to list to show on the screen.
-        if(message.getReceiver().equalsIgnoreCase(Constants.USER_PHONE_NUMBER)
-                || message.getSender().equalsIgnoreCase(Constants.USER_PHONE_NUMBER)
+        if(message.getReceiver().equalsIgnoreCase(Constants.PHONE_NUMBER)
+                || message.getSender().equalsIgnoreCase(Constants.PHONE_NUMBER)
                 || message.getReceiver().equalsIgnoreCase("")) mMessages.add(message);
 
         ((MainActivity)mContext).notifyChatAdapter();
@@ -77,7 +86,7 @@ public class ChatHandler {
         String randomUUID = UUID.randomUUID().toString();
 
         //Get senders phone number from SharedPreferences
-        String sender = mSharedPreferences.getString(Constants.USER_PHONE_NUMBER, "000");
+        String sender = Constants.PHONE_NUMBER;
 
         //Create receiver string empty. If it stays empty, then it is a group message
         String receiver = "";
@@ -94,15 +103,16 @@ public class ChatHandler {
             //TODO: We are cheating here by using only turkish phone numbers right now. fix it
 
             //Get the target of the message by parsing the message
-            receiver = message.substring(1, 13);
-            actualMessage = message.substring(14, message.length()-1);
+            receiver = message.substring(1, 14);
+            actualMessage = message.substring(15, message.length());
 
         }
 
+        double timestamp = ActivityHelpers.getCurrentTimeSeconds();
 
+        MessageObject messageObject = new MessageObject(randomUUID, actualMessage, sender, receiver, timestamp);
 
-        MessageObject messageObject = new MessageObject(randomUUID, actualMessage, sender, receiver);
-
+        Log.i(TAG, "createMessageObject: " +messageObject.toString());
 
         return messageObject;
     }
@@ -115,7 +125,8 @@ public class ChatHandler {
         String[] columns = {DatabaseHelper.KEY_MESSAGE_ID,
                 DatabaseHelper.KEY_MESSAGE,
                 DatabaseHelper.KEY_SENDER,
-                DatabaseHelper.KEY_RECEIVER};
+                DatabaseHelper.KEY_RECEIVER,
+                DatabaseHelper.KEY_MSG_TIMESTAMP};
 
         Cursor cursor = DatabaseHelper.getInstance(mContext).getReadableDatabase()
                 .query(table, columns, null, null, null, null, null, null);
@@ -127,8 +138,9 @@ public class ChatHandler {
             String message = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_MESSAGE));
             String sender = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_SENDER));
             String receiver = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_RECEIVER));
+            double timestamp = cursor.getDouble(cursor.getColumnIndex(DatabaseHelper.KEY_MSG_TIMESTAMP));
 
-            MessageObject messageObject = new MessageObject(messageId, message, sender, receiver);
+            MessageObject messageObject = new MessageObject(messageId, message, sender, receiver, timestamp);
 
             return messageObject;
         }
@@ -147,9 +159,10 @@ public class ChatHandler {
         //Get necessary columns from SQLiite and create MessageObjects
         String table = DatabaseHelper.TABLE_MESSAGES;
         String[] columns = {DatabaseHelper.KEY_MESSAGE_ID,
-        DatabaseHelper.KEY_MESSAGE,
-        DatabaseHelper.KEY_SENDER,
-        DatabaseHelper.KEY_RECEIVER};
+                DatabaseHelper.KEY_MESSAGE,
+                DatabaseHelper.KEY_SENDER,
+                DatabaseHelper.KEY_RECEIVER,
+                DatabaseHelper.KEY_MSG_TIMESTAMP};
 
         Cursor cursor = DatabaseHelper.getInstance(mContext).getReadableDatabase()
                 .query(table, columns, null, null, null, null, null, null);
@@ -162,8 +175,9 @@ public class ChatHandler {
             String message = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_MESSAGE));
             String sender = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_SENDER));
             String receiver = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_RECEIVER));
+            double timestamp = cursor.getDouble(cursor.getColumnIndex(DatabaseHelper.KEY_MSG_TIMESTAMP));
 
-            MessageObject messageObject = new MessageObject(messageId, message, sender, receiver);
+            MessageObject messageObject = new MessageObject(messageId, message, sender, receiver, timestamp);
 
             messages.add(messageObject);
         }

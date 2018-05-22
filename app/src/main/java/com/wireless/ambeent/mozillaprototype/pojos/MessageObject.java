@@ -1,28 +1,39 @@
 package com.wireless.ambeent.mozillaprototype.pojos;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.util.Objects;
 
 public class MessageObject {
 
+    @SerializedName("id")
     private String id;
 
+    @SerializedName("message")
     private String message;
 
+    @SerializedName("sender")
     private String sender;
 
+    @SerializedName("receiver")
     private String receiver;
 
-    public MessageObject(String id, String message, String sender) {
+    @SerializedName("timestamp")
+    private long timestamp;
+
+    public MessageObject(String id, String message, String sender, long timestamp) {
         this.id = id;
         this.message = message;
         this.sender = sender;
+        this.timestamp = timestamp;
     }
 
-    public MessageObject(String id, String message, String sender, String receiver) {
+    public MessageObject(String id, String message, String sender, String receiver, long timestamp) {
         this.id = id;
         this.message = message;
         this.sender = sender;
         this.receiver = receiver;
+        this.timestamp = timestamp;
     }
 
     public String getId() {
@@ -55,6 +66,14 @@ public class MessageObject {
 
     public void setReceiver(String receiver) {
         this.receiver = receiver;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 
     @Override

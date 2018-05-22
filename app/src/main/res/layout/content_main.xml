@@ -8,6 +8,7 @@
     tools:context=".activities.MainActivity"
     tools:showIn="@layout/activity_main">
 
+
     <com.wireless.ambeent.mozillaprototype.customviews.CustomRecyclerView
         android:id="@+id/recyclerView_Chat"
         android:layout_width="0dp"
@@ -17,6 +18,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+
 
     <View
         android:id="@+id/view_line"

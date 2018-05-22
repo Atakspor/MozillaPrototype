@@ -32,6 +32,7 @@ public class ServerController {
 
     //Starts the server
     public void startServer() {
+        Log.i(TAG, "Starting server... ");
         try {
            initServer();
            mServer.start();
@@ -42,6 +43,7 @@ public class ServerController {
 
     //Stops the server
     public void stopServer() {
+        Log.i(TAG, "Stopping server...");
         try {
             initServer();
             if(!mServer.wasStarted()) return; //If it was not started, do nothing

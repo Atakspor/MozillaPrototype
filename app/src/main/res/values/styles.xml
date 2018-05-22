@@ -46,4 +46,12 @@
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
+    <style name="SwitchCompatTheme" >
+        <item name="colorControlActivated">#f00</item>
+    </style>
+    <style name="SwitchCompatStyle" >
+        <item name="android:thumb">@drawable/switch_hotspot</item>
+        <item name="trackTint">@color/switch_color</item>
+    </style>
+
 </resources>

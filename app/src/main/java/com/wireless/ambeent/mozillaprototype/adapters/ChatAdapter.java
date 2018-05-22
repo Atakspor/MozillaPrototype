@@ -1,7 +1,9 @@
 package com.wireless.ambeent.mozillaprototype.adapters;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.support.constraint.ConstraintLayout;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
@@ -13,6 +15,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.wireless.ambeent.mozillaprototype.R;
+import com.wireless.ambeent.mozillaprototype.helpers.Constants;
 import com.wireless.ambeent.mozillaprototype.pojos.MessageObject;
 
 import org.w3c.dom.Text;
@@ -51,6 +54,16 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.MyViewHolder>
         String senderName = messageObject.getSender();
         String message = messageObject.getMessage();
 
+        String receiver = messageObject.getReceiver();
+
+        if(Constants.PHONE_NUMBER.equalsIgnoreCase(receiver)){
+            holder.containerCardView.setCardBackgroundColor(ContextCompat.getColor(mContext, R.color.colorLightGray));
+
+        }else{
+            holder.containerCardView.setCardBackgroundColor(ContextCompat.getColor(mContext, R.color.colorWhite));
+
+        }
+
         //Show the messages and their senders.
         holder.senderNameTextView.setText(senderName);
         holder.senderMessageTextView.setText(message);
@@ -68,6 +81,7 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.MyViewHolder>
 
         public TextView senderNameTextView, senderMessageTextView;
 
+        public CardView containerCardView;
 
 
         public MyViewHolder(View view) {
@@ -76,6 +90,7 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.MyViewHolder>
             senderNameTextView = (TextView) view.findViewById(R.id.textView_SenderName);
             senderMessageTextView = (TextView) view.findViewById(R.id.textView_SenderMessage);
 
+            containerCardView = (CardView) view.findViewById(R.id.cardView_MsgContainer);
         }
 
 

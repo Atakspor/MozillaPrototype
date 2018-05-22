@@ -19,6 +19,7 @@
     <color name="colorDarkGray">#4a4a4a</color>
     <color name="colorClusterInfo">#515151</color>
     <color name="colorGray">#808080</color>
+    <color name="colorLightGray2">#b0b0b0</color>
     <color name="colorLightGray">#e0e0e0</color>
     <color name="colorWhite">#fff</color>
     <color name="colorCream">#f5f5f5</color>
@@ -35,4 +36,6 @@
     <color name="colorRedNoConnection">#e53935</color>
     <color name="colorRedScarlet">#FF2400</color>
     <color name="colorRedPantone">#ED2939</color>
+
+
 </resources>

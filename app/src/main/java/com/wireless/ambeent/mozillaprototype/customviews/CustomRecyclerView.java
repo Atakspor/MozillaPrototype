@@ -29,7 +29,7 @@ public class CustomRecyclerView extends RecyclerView {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         super.onTouchEvent(event);
-        Log.i(TAG, "onTouchEvent: shouldIgnoreTouch " + shouldIgnoreTouch);
+  //      Log.i(TAG, "onTouchEvent: shouldIgnoreTouch " + shouldIgnoreTouch);   //    UNCOMMENT THIS TO TEST
         if(shouldIgnoreTouch){
             return false;
         } else return true;

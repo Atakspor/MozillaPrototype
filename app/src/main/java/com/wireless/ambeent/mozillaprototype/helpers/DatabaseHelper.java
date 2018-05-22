@@ -15,7 +15,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static DatabaseHelper dbInstance;
 
     // Database Version. Increment this manually when database schema changes.
-    private static final int DATABASE_VERSION = 3;
+    private static final int DATABASE_VERSION = 4;
 
     // Database Name
     private static final String DATABASE_NAME = "MozillaProMessenger";
@@ -29,6 +29,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String KEY_MESSAGE = "message";
     public static final String KEY_SENDER = "sender";
     public static final String KEY_RECEIVER = "receiver";
+    public static final String KEY_MSG_TIMESTAMP = "msg_timestmap";
 
 
     //Messages creating query.
@@ -36,7 +37,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             KEY_MESSAGE_ID + " TEXT, "+
             KEY_MESSAGE + " TEXT, "+
             KEY_SENDER + " TEXT, " +
-            KEY_RECEIVER +" TEXT);";
+            KEY_RECEIVER + " TEXT, " +
+            KEY_MSG_TIMESTAMP +" REAL);";
 
 
 
