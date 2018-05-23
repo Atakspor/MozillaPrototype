@@ -1,8 +1,18 @@
 package com.wireless.ambeent.mozillaprototype.server;
 
+import android.content.Context;
+import android.os.Handler;
 import android.util.Log;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.wireless.ambeent.mozillaprototype.activities.MainActivity;
+import com.wireless.ambeent.mozillaprototype.helpers.DatabaseHelper;
+import com.wireless.ambeent.mozillaprototype.pojos.MessageObject;
+
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import fi.iki.elonen.NanoHTTPD;
@@ -18,6 +28,9 @@ public class ServerController {
 
     private static MyHTTPD mServer;
 
+    //The context for local database access
+    private Context mContext;
+
     private ServerController() {
     }
 
@@ -31,7 +44,9 @@ public class ServerController {
     }
 
     //Starts the server
-    public void startServer() {
+    public void startServer(Context context) {
+
+        mContext = context;
         Log.i(TAG, "Starting server... ");
         try {
            initServer();
@@ -72,26 +87,45 @@ public class ServerController {
 
             String response = "true";
 
-            HashMap<String, String> params = new HashMap<String, String>();
             final HashMap<String, String> map = new HashMap<String, String>();
             try {
                 session.parseBody(map);
-                params = (HashMap<String, String>) session.getParms();
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (ResponseException e) {
                 e.printStackTrace();
             }
 
-            final String json = map.get("postData");
+            //Getting the POST data as json
+            final String messageObjectListJson = map.get("postData");
+
+            Gson gson = new Gson();
+            Type objectListType = new TypeToken<ArrayList<MessageObject>>() {
+            }.getType();
+
+            final ArrayList<MessageObject> messageObjectList = gson.fromJson(messageObjectListJson, objectListType);
+
+            //Insert posted messages to local SQLite database
+            for(MessageObject messageObject : messageObjectList){
+                DatabaseHelper.insertMessageToSQLite(mContext, messageObject);
+            }
+
+            //Show new messages if the app is visible.
+            if(MainActivity.isVisible){
+                Handler mainHandler = new Handler(mContext.getMainLooper());
+                mainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        ((MainActivity)mContext).getmChatHandler().updateMessageList(messageObjectList);
+                        ((MainActivity)mContext).notifyChatAdapter();
+                    }
+                });
+            }
+
             Log.d(TAG, "Got MAP data: " + map);
-            Log.d(TAG, "Got PARAMS data: " + params);
-            Log.d(TAG, "Got POST data: " + json);
+            Log.d(TAG, "Got POST data: " + messageObjectListJson);
 
 
-           /* } catch(IOException ioe) {
-                Log.w(TAG,"Httpd: " + ioe.toString());
-            }*/
 
             return newFixedLengthResponse(response);
         }

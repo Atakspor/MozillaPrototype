@@ -1,22 +1,25 @@
 package com.wireless.ambeent.mozillaprototype.businesslogic;
 
-import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.util.Log;
 
 import com.wireless.ambeent.mozillaprototype.activities.MainActivity;
 import com.wireless.ambeent.mozillaprototype.helpers.ActivityHelpers;
 import com.wireless.ambeent.mozillaprototype.helpers.Constants;
 import com.wireless.ambeent.mozillaprototype.helpers.DatabaseHelper;
+import com.wireless.ambeent.mozillaprototype.httprequests.IRest;
+import com.wireless.ambeent.mozillaprototype.httprequests.RetrofitRequester;
 import com.wireless.ambeent.mozillaprototype.pojos.ConnectedDeviceObject;
 import com.wireless.ambeent.mozillaprototype.pojos.MessageObject;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
+
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class ChatHandler {
 
@@ -26,6 +29,8 @@ public class ChatHandler {
     private List<MessageObject> mMessages;
     private List<ConnectedDeviceObject> mConnectedDeviceList;
 
+    //To prevent multiple sending of the messages,
+    public static long lastMessaceSyncTimestmap = 0;
 
     public ChatHandler(Context mContext, List<MessageObject> mMessages, List<ConnectedDeviceObject> mConnectedDeviceList  ) {
         this.mContext = mContext;
@@ -34,7 +39,7 @@ public class ChatHandler {
 
 
         //Show the messages when constructed
-        updateMessageList(getMessagesFromSQLite());
+        updateMessageList(DatabaseHelper.getMessagesFromSQLite(mContext));
     }
 
 
@@ -43,13 +48,50 @@ public class ChatHandler {
 
 
         MessageObject messageObject = createMessageObject(message);
-        insertMessageToSQLite(messageObject);
+        DatabaseHelper.insertMessageToSQLite(mContext, messageObject);
 
         //Update message list by this message
         updateMessageList(messageObject);
 
+        //Send this message to other devices that are connected
+        ArrayList<MessageObject> newMessage = new ArrayList<>();
+        newMessage.add(messageObject);
+        postMessagesToNetwork(newMessage);
+
         Log.i(TAG, "sendMessage: " +messageObject);
 
+    }
+
+    //Send the given message list to everyone in the same network
+    public void postMessagesToNetwork(ArrayList<MessageObject> outgoingMessageList){
+
+        for (ConnectedDeviceObject connectedDeviceObject : mConnectedDeviceList){
+
+            String ipAddress = "http://"+connectedDeviceObject.getIpAddress()+"/";
+            IRest taskService = RetrofitRequester.createService(IRest.class, ipAddress);
+            Call<ResponseBody> postCall  = taskService.sendMessagesToNetwork((ArrayList<MessageObject>) outgoingMessageList);
+
+            postRequest(postCall);
+        }
+    }
+
+    private void postRequest(Call<ResponseBody> call) {
+        try {
+            call.enqueue(new Callback<ResponseBody>() {
+                @Override
+                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                    Log.i(TAG, "onResponse: " + call.toString());
+                }
+
+                @Override
+                public void onFailure(Call<ResponseBody> call, Throwable t) {
+                    // something went completely south (like no internet connection)
+                    t.printStackTrace();
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     //Updates message List with the given message list
@@ -108,7 +150,7 @@ public class ChatHandler {
 
         }
 
-        double timestamp = ActivityHelpers.getCurrentTimeSeconds();
+        long timestamp = ActivityHelpers.getCurrentTimeSeconds();
 
         MessageObject messageObject = new MessageObject(randomUUID, actualMessage, sender, receiver, timestamp);
 
@@ -117,98 +159,6 @@ public class ChatHandler {
         return messageObject;
     }
 
-    //Gets only the last message inserted
-    public MessageObject getLastMessageFromSQLite(){
 
-        //Get necessary columns from SQLiite and create MessageObjects
-        String table = DatabaseHelper.TABLE_MESSAGES;
-        String[] columns = {DatabaseHelper.KEY_MESSAGE_ID,
-                DatabaseHelper.KEY_MESSAGE,
-                DatabaseHelper.KEY_SENDER,
-                DatabaseHelper.KEY_RECEIVER,
-                DatabaseHelper.KEY_MSG_TIMESTAMP};
-
-        Cursor cursor = DatabaseHelper.getInstance(mContext).getReadableDatabase()
-                .query(table, columns, null, null, null, null, null, null);
-
-        //Populate the messages HashSet
-        if(cursor.moveToLast()){
-            //Constructing every message and their attributes here.
-            String messageId = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_MESSAGE_ID));
-            String message = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_MESSAGE));
-            String sender = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_SENDER));
-            String receiver = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_RECEIVER));
-            double timestamp = cursor.getDouble(cursor.getColumnIndex(DatabaseHelper.KEY_MSG_TIMESTAMP));
-
-            MessageObject messageObject = new MessageObject(messageId, message, sender, receiver, timestamp);
-
-            return messageObject;
-        }
-
-        //Something is wrong...
-        return null;
-
-
-    }
-
-    //Gets saved messages from SQLite database and populates them
-    public ArrayList<MessageObject> getMessagesFromSQLite(){
-
-        ArrayList<MessageObject> messages = new ArrayList<>();
-
-        //Get necessary columns from SQLiite and create MessageObjects
-        String table = DatabaseHelper.TABLE_MESSAGES;
-        String[] columns = {DatabaseHelper.KEY_MESSAGE_ID,
-                DatabaseHelper.KEY_MESSAGE,
-                DatabaseHelper.KEY_SENDER,
-                DatabaseHelper.KEY_RECEIVER,
-                DatabaseHelper.KEY_MSG_TIMESTAMP};
-
-        Cursor cursor = DatabaseHelper.getInstance(mContext).getReadableDatabase()
-                .query(table, columns, null, null, null, null, null, null);
-
-        //Populate the messages HashSet
-        while(cursor.moveToNext()){
-
-            //Constructing every message and their attributes here.
-            String messageId = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_MESSAGE_ID));
-            String message = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_MESSAGE));
-            String sender = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_SENDER));
-            String receiver = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_RECEIVER));
-            double timestamp = cursor.getDouble(cursor.getColumnIndex(DatabaseHelper.KEY_MSG_TIMESTAMP));
-
-            MessageObject messageObject = new MessageObject(messageId, message, sender, receiver, timestamp);
-
-            messages.add(messageObject);
-        }
-
-        return messages;
-    }
-
-    //Inserts a message to SQLite database if it is not already in there
-    public void insertMessageToSQLite(MessageObject messageObject){
-
-        //Check database to see whether the message is already inserted
-        String table = DatabaseHelper.TABLE_MESSAGES;
-        String[] columns = {DatabaseHelper.KEY_MESSAGE_ID};
-        String[] args = { messageObject.getId()};
-
-        Cursor cursor = DatabaseHelper.getInstance(mContext).getReadableDatabase()
-                .query(table, columns, DatabaseHelper.KEY_MESSAGE_ID +"=?", args, null, null, null, null);
-
-        //If this returns true, the message is already in database
-        if(cursor.moveToFirst()) return;
-
-        //New message. Insert it to database.
-        ContentValues values = new ContentValues();
-        values.put(DatabaseHelper.KEY_MESSAGE_ID, messageObject.getId());
-        values.put(DatabaseHelper.KEY_MESSAGE, messageObject.getMessage());
-        values.put(DatabaseHelper.KEY_SENDER, messageObject.getSender());
-        values.put(DatabaseHelper.KEY_RECEIVER, messageObject.getReceiver());
-
-        DatabaseHelper.getInstance(mContext)
-                .getWritableDatabase()
-                .insert(DatabaseHelper.TABLE_MESSAGES, null, values);
-    }
 
 }

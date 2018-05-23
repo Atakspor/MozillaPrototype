@@ -7,7 +7,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.converter.scalars.ScalarsConverterFactory;
 
-public class ServiceGenerator {
+public class RetrofitRequester {
 
 
     private static OkHttpClient.Builder httpClient = new OkHttpClient.Builder();

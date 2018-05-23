@@ -87,10 +87,8 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
-
-
-       /* IRest taskService = ServiceGenerator.createService(IRest.class, "asd");
+/*
+        IRest taskService = ServiceGenerator.createService(IRest.class, "asd");
         Call<ResponseBody> loginCall  = taskService.listTasks("asd");
 
         loginCall.enqueue(new );
@@ -100,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-  /*  public void loginPost(Call<ResponseBody> call)
+   /* public void loginPost(Call<ResponseBody> call)
     {
         try
         {
@@ -181,19 +179,26 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         mSwitchCompat.setEnabled(true);
-                        ServerController.getInstance().startServer();
+                        ServerController.getInstance().startServer(MainActivity.this);
 
                     }
                 }, 5000);
 
 
                 if(isChecked){
+
                     mWifiApController.turnOnHotspot();
+
+                    Toast.makeText(MainActivity.this, "Activating Hotspot...", Toast.LENGTH_SHORT).show();
+
                 } else {
+
                     mWifiApController.turnOffHotspot();
+
+                    Toast.makeText(MainActivity.this, "Disabling Hotspot...", Toast.LENGTH_SHORT).show();
+
                 }
 
-                Toast.makeText(MainActivity.this, isChecked + "", Toast.LENGTH_SHORT).show();
 
             }
         });
@@ -237,7 +242,12 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @OnClick(R.id.imageButton_ScanWifi)
+    public void scanWifi(){
 
+     //   mChatHandler.postMessagesToNetwork();
+
+    }
 
 
     @Override
@@ -245,6 +255,7 @@ public class MainActivity extends AppCompatActivity {
         isVisible = true;
         notifyChatAdapter();
 
+        ServerController.getInstance().startServer(this);
 
         Log.i(TAG, "Lifecycle: onResume");
         super.onResume();
@@ -275,4 +286,11 @@ public class MainActivity extends AppCompatActivity {
         Log.i(TAG, "Lifecycle: onStop ");
         super.onStop();
     }
+
+
+    public ChatHandler getmChatHandler() {
+        return mChatHandler;
+    }
+
+
 }

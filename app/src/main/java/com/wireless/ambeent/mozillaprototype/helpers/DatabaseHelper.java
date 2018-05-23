@@ -1,8 +1,14 @@
 package com.wireless.ambeent.mozillaprototype.helpers;
 
+import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+
+import com.wireless.ambeent.mozillaprototype.pojos.MessageObject;
+
+import java.util.ArrayList;
 
 /**
  * Created by Atakan on 13.07.2017.
@@ -79,7 +85,99 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
 
+    //Gets only the last message inserted
+    public static MessageObject getLastMessageFromSQLite(Context mContext){
 
+        //Get necessary columns from SQLiite and create MessageObjects
+        String table = DatabaseHelper.TABLE_MESSAGES;
+        String[] columns = {DatabaseHelper.KEY_MESSAGE_ID,
+                DatabaseHelper.KEY_MESSAGE,
+                DatabaseHelper.KEY_SENDER,
+                DatabaseHelper.KEY_RECEIVER,
+                DatabaseHelper.KEY_MSG_TIMESTAMP};
+
+        Cursor cursor = DatabaseHelper.getInstance(mContext).getReadableDatabase()
+                .query(table, columns, null, null, null, null, null, null);
+
+        //Populate the messages HashSet
+        if(cursor.moveToLast()){
+            //Constructing every message and their attributes here.
+            String messageId = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_MESSAGE_ID));
+            String message = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_MESSAGE));
+            String sender = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_SENDER));
+            String receiver = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_RECEIVER));
+            long timestamp = cursor.getLong(cursor.getColumnIndex(DatabaseHelper.KEY_MSG_TIMESTAMP));
+
+            MessageObject messageObject = new MessageObject(messageId, message, sender, receiver, timestamp);
+
+            return messageObject;
+        }
+
+        //Something is wrong...
+        return null;
+
+
+    }
+
+    //Gets saved messages from SQLite database and populates them
+    public static ArrayList<MessageObject> getMessagesFromSQLite(Context mContext){
+
+        ArrayList<MessageObject> messages = new ArrayList<>();
+
+        //Get necessary columns from SQLiite and create MessageObjects
+        String table = DatabaseHelper.TABLE_MESSAGES;
+        String[] columns = {DatabaseHelper.KEY_MESSAGE_ID,
+                DatabaseHelper.KEY_MESSAGE,
+                DatabaseHelper.KEY_SENDER,
+                DatabaseHelper.KEY_RECEIVER,
+                DatabaseHelper.KEY_MSG_TIMESTAMP};
+
+        Cursor cursor = DatabaseHelper.getInstance(mContext).getReadableDatabase()
+                .query(table, columns, null, null, null, null, null, null);
+
+        //Populate the messages HashSet
+        while(cursor.moveToNext()){
+
+            //Constructing every message and their attributes here.
+            String messageId = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_MESSAGE_ID));
+            String message = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_MESSAGE));
+            String sender = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_SENDER));
+            String receiver = cursor.getString(cursor.getColumnIndex(DatabaseHelper.KEY_RECEIVER));
+            long timestamp = cursor.getLong(cursor.getColumnIndex(DatabaseHelper.KEY_MSG_TIMESTAMP));
+
+            MessageObject messageObject = new MessageObject(messageId, message, sender, receiver, timestamp);
+
+            messages.add(messageObject);
+        }
+
+        return messages;
+    }
+
+    //Inserts a message to SQLite database if it is not already in there
+    public static void insertMessageToSQLite(Context mContext, MessageObject messageObject){
+
+        //Check database to see whether the message is already inserted
+        String table = DatabaseHelper.TABLE_MESSAGES;
+        String[] columns = {DatabaseHelper.KEY_MESSAGE_ID};
+        String[] args = { messageObject.getId()};
+
+        Cursor cursor = DatabaseHelper.getInstance(mContext).getReadableDatabase()
+                .query(table, columns, DatabaseHelper.KEY_MESSAGE_ID +"=?", args, null, null, null, null);
+
+        //If this returns true, the message is already in database
+        if(cursor.moveToFirst()) return;
+
+        //New message. Insert it to database.
+        ContentValues values = new ContentValues();
+        values.put(DatabaseHelper.KEY_MESSAGE_ID, messageObject.getId());
+        values.put(DatabaseHelper.KEY_MESSAGE, messageObject.getMessage());
+        values.put(DatabaseHelper.KEY_SENDER, messageObject.getSender());
+        values.put(DatabaseHelper.KEY_RECEIVER, messageObject.getReceiver());
+
+        DatabaseHelper.getInstance(mContext)
+                .getWritableDatabase()
+                .insert(DatabaseHelper.TABLE_MESSAGES, null, values);
+    }
 
     //Called everytime the app is launched. Deletes the messages that are older than 10 minutes
    /*
