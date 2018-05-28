@@ -5,6 +5,7 @@ import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.provider.ContactsContract;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.wireless.ambeent.mozillaprototype.activities.MainActivity;
 import com.wireless.ambeent.mozillaprototype.helpers.ActivityHelpers;
@@ -34,7 +35,7 @@ public class ChatHandler {
 
     private Context mContext;
     private List<MessageObject> mMessages;
-    private List<ConnectedDeviceObject> mConnectedDeviceList;
+    private HashSet<ConnectedDeviceObject> mConnectedDeviceList;
 
     //WifiManager for general purposes
     private WifiManager mWifiManager;
@@ -49,7 +50,7 @@ public class ChatHandler {
     //Contains the mac addresses of the devices that are already synced in this network.
     public static Set<String> syncedDeviceMacSet = new HashSet<>();
 
-    public ChatHandler(Context mContext, List<MessageObject> mMessages, List<ConnectedDeviceObject> mConnectedDeviceList) {
+    public ChatHandler(Context mContext, List<MessageObject> mMessages, HashSet<ConnectedDeviceObject> mConnectedDeviceList) {
         this.mContext = mContext;
         this.mMessages = mMessages;
         this.mConnectedDeviceList = mConnectedDeviceList;
@@ -97,6 +98,9 @@ public class ChatHandler {
 
             Log.i(TAG, "postMessagesToNetwork: Sending message to: " + connectedDeviceObject.getIpAddress());
 
+            Toast.makeText(mContext, "Posting " +outgoingMessageList.size() + " messages to " +connectedDeviceObject.getIpAddress(), Toast.LENGTH_SHORT).show();
+
+
             String ipAddress = "http://" + connectedDeviceObject.getIpAddress() + ":8000/";
             IRest taskService = RetrofitRequester.createService(IRest.class, ipAddress);
             Call<ResponseBody> postCall = taskService.sendMessagesToNetwork(outgoingMessageList);
@@ -107,6 +111,8 @@ public class ChatHandler {
 
     //Send the given message list to a target ip address in the network
     private void postMessagesToTarget(ArrayList<MessageObject> outgoingMessageList, String ipAddress) {
+
+        Toast.makeText(mContext, "Posting " +outgoingMessageList.size() + " messages to " +ipAddress, Toast.LENGTH_SHORT).show();
 
         String fullAddress = "http://" + ipAddress + ":8000/";
         IRest taskService = RetrofitRequester.createService(IRest.class, fullAddress);
@@ -126,6 +132,7 @@ public class ChatHandler {
             return;
         }
 
+        //Get connected ssid to compare with last synced network
         String connectedSsid = mWifiManager.getConnectionInfo().getSSID();
 
         //Recently connected to a network that is not synced with this device. Clear the syncedDeviceMacSet and prepare for a new sync
@@ -146,6 +153,14 @@ public class ChatHandler {
 
             //Get every message from database and prepare the list
             ArrayList<MessageObject> allMessages = DatabaseHelper.getTargetedMessagesFromSQLite(mContext);
+
+
+            if(allMessages.size() < 1) {
+                //Add the device to synced address set
+                syncedDeviceMacSet.add(connectedDeviceObject.getMacAddress());
+                continue; //No messages, do not post empty list
+            }
+
             postMessagesToTarget(allMessages, connectedDeviceObject.getIpAddress());
 
             Log.i(TAG, "syncEveryMessageWithNetwork: Synced with " + connectedDeviceObject.getIpAddress());
@@ -196,8 +211,8 @@ public class ChatHandler {
         //Get senders phone number from SharedPreferences
         String sender = Constants.PHONE_NUMBER;
 
-        //Create receiver string empty. If it stays empty, then it is a group message
-        String receiver = "";
+        //Create a placeholder receiver string. If it stays the same, then it is a group message
+        String receiver = "null";
 
         //If the message is not targeted, then message and actualMessage are the same.
         //If the message is targeted, the targeting part will be removed

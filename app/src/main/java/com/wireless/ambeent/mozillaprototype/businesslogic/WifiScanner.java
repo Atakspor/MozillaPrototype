@@ -115,7 +115,7 @@ public class WifiScanner extends BroadcastReceiver {
 
             String ssidPrefix = scanResult.SSID.substring(0,14 );
 
-            Log.i(TAG, "onReceive: " + ssidPrefix);
+       //     Log.i(TAG, "onReceive: " + ssidPrefix);
 
             //Check the substring to see whether the ssid containts 'AmbeentMozilla'
             if(ssidPrefix.equalsIgnoreCase("AmbeentMozilla")) scanResults.add(scanResult);

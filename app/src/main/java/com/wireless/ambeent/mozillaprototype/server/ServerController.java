@@ -77,8 +77,8 @@ public class ServerController {
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-            //        Log.i(TAG, "Server is alive: " +mServer.isAlive() + ". Server is running: " +mServer.wasStarted());
-                    Toast.makeText(mContext, "Server is alive: " +mServer.isAlive() + ". Server is running: " +mServer.wasStarted(), Toast.LENGTH_SHORT).show();
+                    Log.i(TAG, "Server is alive: " +mServer.isAlive() + ". Server is running: " +mServer.wasStarted());
+            //        Toast.makeText(mContext, "Server is alive: " +mServer.isAlive() + ". Server is running: " +mServer.wasStarted(), Toast.LENGTH_SHORT).show();
                     handler.postDelayed(this, 10000);
                 }
             }, 5000);
@@ -150,10 +150,15 @@ public class ServerController {
 
             final ArrayList<MessageObject> messageObjectList = gson.fromJson(messageObjectListJson, objectListType);
 
+            //Will hold the new messages only
+            final ArrayList<MessageObject> newMessagesList = new ArrayList<>();
+
             //Insert posted messages to local SQLite database
             for(MessageObject messageObject : messageObjectList){
-                DatabaseHelper.insertMessageToSQLite(mContext, messageObject);
+                if(DatabaseHelper.insertMessageToSQLite(mContext, messageObject)) newMessagesList.add(messageObject);
             }
+
+
 
             //Show new messages if the app is visible.
             if(MainActivity.isVisible){
@@ -161,7 +166,7 @@ public class ServerController {
                 mainHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        ((MainActivity)mContext).getmChatHandler().updateMessageList(messageObjectList);
+                        ((MainActivity)mContext).getmChatHandler().updateMessageList(newMessagesList);
                         ((MainActivity)mContext).notifyChatAdapter();
                     }
                 });

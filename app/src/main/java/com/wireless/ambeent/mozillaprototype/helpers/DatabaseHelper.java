@@ -22,7 +22,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static DatabaseHelper dbInstance;
 
     // Database Version. Increment this manually when database schema changes.
-    private static final int DATABASE_VERSION = 6;
+    private static final int DATABASE_VERSION = 8;
 
     // Database Name
     private static final String DATABASE_NAME = "MozillaProMessenger";
@@ -168,10 +168,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 DatabaseHelper.KEY_MSG_TIMESTAMP};
 
         //Receiver field is not empty
-        String[] args = {""};
+        String selection = DatabaseHelper.KEY_MESSAGE_ID +"!=?";
+        String[] args = {"null"};
 
         Cursor cursor = DatabaseHelper.getInstance(mContext).getReadableDatabase()
-                .query(table, columns, DatabaseHelper.KEY_RECEIVER +"=?", args, null, null, null, null);
+                .query(table, columns, selection, args, null, null, null, null);
 
         //Populate the messages HashSet
         while(cursor.moveToNext()){
@@ -191,21 +192,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return messages;
     }
 
-    //Inserts a message to SQLite database if it is not already in there
-    public static void insertMessageToSQLite(Context mContext, MessageObject messageObject){
+    //Inserts a message to SQLite database if it is not already in there. Returns true if inserted
+    public static boolean insertMessageToSQLite(Context mContext, MessageObject messageObject){
 
         //Check database to see whether the message is already inserted
         String table = DatabaseHelper.TABLE_MESSAGES;
         String[] columns = {DatabaseHelper.KEY_MESSAGE_ID};
+        String selection = DatabaseHelper.KEY_MESSAGE_ID +"=?";
         String[] args = { messageObject.getId()};
 
+        Log.i(TAG, "insertMessageToSQLite: " + args.toString());
+
         Cursor cursor = DatabaseHelper.getInstance(mContext).getReadableDatabase()
-                .query(table, columns, DatabaseHelper.KEY_MESSAGE_ID +"=?", args, null, null, null, null);
+                .query(table, columns, selection, args, null, null, null, null);
+
 
         //If this returns true, the message is already in database
         if(cursor.moveToFirst()) {
             Log.i(TAG, "insertMessageToSQLite: Already have that message");
-            return;
+            return false;
         }
 
         //New message. Insert it to database.
@@ -218,6 +223,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         DatabaseHelper.getInstance(mContext)
                 .getWritableDatabase()
                 .insert(DatabaseHelper.TABLE_MESSAGES, null, values);
+        return true;
     }
 
     //Called everytime the app is launched. Deletes the messages that are older than 10 minutes

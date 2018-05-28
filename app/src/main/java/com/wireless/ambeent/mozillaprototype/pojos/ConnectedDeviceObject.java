@@ -73,4 +73,12 @@ public class ConnectedDeviceObject {
 
         return Objects.hash(macAddress);
     }
+
+    @Override
+    public String toString() {
+        return "ConnectedDeviceObject{" +
+                "macAddress='" + macAddress + '\'' +
+                ", ipAddress='" + ipAddress + '\'' +
+                '}';
+    }
 }

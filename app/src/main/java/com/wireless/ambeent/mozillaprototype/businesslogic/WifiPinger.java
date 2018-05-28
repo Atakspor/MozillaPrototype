@@ -16,6 +16,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,17 +38,19 @@ public class WifiPinger {
     private String usersIpAddress = "";
     private StringBuilder stringBuilder;
 
-    private List<ConnectedDeviceObject> mConnDevObjList;
+    private HashSet<ConnectedDeviceObject> mConnDevObjList;
 
-    public WifiPinger(Context mContext, List<ConnectedDeviceObject> mConnDevObjList){
+    public WifiPinger(Context mContext, HashSet<ConnectedDeviceObject> mConnDevObjList){
         this.mContext = mContext;
         this.mConnDevObjList = mConnDevObjList;
 
 
-        stringBuilder = new StringBuilder();
+
     }
 
     public void startScanning(){
+
+        stringBuilder = new StringBuilder();
 
         //Sets users local ip address
         setUsersConnDevice();
@@ -59,23 +63,27 @@ public class WifiPinger {
 
         @Override
         protected void onPreExecute() {
-            Log.i(TAG, "onPreExecute: ScanOperation ");
+       //     Log.i(TAG, "onPreExecute: ScanOperation ");
+        //    mConnDevObjList.clear();
+
+
         }
 
         @Override
         protected Void doInBackground(Void... params) {
 
-            Log.i(TAG, "Starting scan: ");
+      //      Log.i(TAG, "Starting scan: ");
 
             ExecutorService executor = Executors.newFixedThreadPool(NB_THREADS);
             String subnet = usersIpAddress.substring(0, usersIpAddress.lastIndexOf("."));
+
 
             for (int dest = 0; dest < 255; dest++) {
                 String host = subnet + "." + dest;
                 executor.execute(pingRunnable(host));
             }
 
-            Log.i(TAG, "Waiting for executor to terminate...");
+       //     Log.i(TAG, "Waiting for executor to terminate...");
             executor.shutdown();
             try {
                 executor.awaitTermination(5000, TimeUnit.MILLISECONDS);
@@ -86,6 +94,12 @@ public class WifiPinger {
             Log.i(TAG, "Scan finished");
             Log.i(TAG, "Scan results: " + stringBuilder.toString());
 
+            for (ConnectedDeviceObject connectedDeviceObject : mConnDevObjList){
+
+                Log.i(TAG, "ipAddress:  " +connectedDeviceObject.getIpAddress());
+
+            }
+
             return null;
         }
 
@@ -93,9 +107,7 @@ public class WifiPinger {
         @Override
         protected void onPostExecute(Void aVoid) {
 
-            setConnDeviceTextview();
-
-            Log.i(TAG, "onPostExecute: ScanOperation");
+       //     Log.i(TAG, "onPostExecute: ScanOperation");
         }
     }
 
@@ -116,12 +128,15 @@ public class WifiPinger {
     private Runnable pingRunnable(final String host) {
         return new Runnable() {
             public void run() {
-                Log.d(TAG, "Pinging " + host + "...");
+       //         Log.d(TAG, "Pinging " + host + "...");
+
+      //          ArrayList<ConnectedDeviceObject> connectedDeviceObjects = new ArrayList<>();
+
                 try {
                     InetAddress inet = InetAddress.getByName(host);
-                    boolean reachable = inet.isReachable(1000);
+                    boolean reachable = inet.isReachable(2000);
                     if (reachable) {
-                        Log.d(TAG, "=> Result: reachable " + inet.getHostName() + " " + inet.getCanonicalHostName());
+            //            Log.d(TAG, "=> Result: reachable " + inet.getHostName() + " " + inet.getCanonicalHostName());
 
                         BufferedReader bufferedReader = new BufferedReader(new FileReader("/proc/net/arp"));
                         String line;
@@ -134,10 +149,14 @@ public class WifiPinger {
                                     //We have found a device at this address. Add it to our list.
 
                                     //Is this the users own ip address?
-                                    boolean isThisTheUser = false;
-                                    if(splitted[0].equalsIgnoreCase(usersIpAddress))  isThisTheUser = true;
+                                    if(splitted[0].equalsIgnoreCase(usersIpAddress))
+                                        continue;
 
-                                    ConnectedDeviceObject connectedDeviceObject = new ConnectedDeviceObject(neighborMac.toUpperCase(), splitted[0], isThisTheUser);
+
+                                    ConnectedDeviceObject connectedDeviceObject = new ConnectedDeviceObject(neighborMac.toUpperCase(), splitted[0]);
+
+                                    Log.i(TAG, "run: Found " + connectedDeviceObject.toString());
+
                                     mConnDevObjList.add(connectedDeviceObject);
 
                                     stringBuilder.append(" IP " +splitted[0] + " MAC: " + neighborMac +"\n");
@@ -147,6 +166,9 @@ public class WifiPinger {
                         bufferedReader.close();
 
                     }
+
+
+
              //       Log.d(TAG, "=> Result: not reachable ");
                 } catch (UnknownHostException e) {
                     e.printStackTrace();
@@ -167,9 +189,9 @@ public class WifiPinger {
 
         String usersMacAddress = ActivityHelpers.getMacAddr();
 
-        mConnDevObjList.add(new ConnectedDeviceObject(usersMacAddress, usersIpAddress, true));
+    //    mConnDevObjList.add(new ConnectedDeviceObject(usersMacAddress, usersIpAddress, true));
 
-        Log.i(TAG, "setUsersConnDevice: " + usersIpAddress);
+    //    Log.i(TAG, "setUsersConnDevice: " + usersIpAddress);
     //    ipAdressTextView.setText(usersIpAddress);
     }
 

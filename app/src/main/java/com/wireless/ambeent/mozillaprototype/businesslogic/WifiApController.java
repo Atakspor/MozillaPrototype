@@ -7,6 +7,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.wireless.ambeent.mozillaprototype.hotspot.ClientScanResult;
 import com.wireless.ambeent.mozillaprototype.hotspot.FinishScanListener;
@@ -15,6 +16,7 @@ import com.wireless.ambeent.mozillaprototype.pojos.ConnectedDeviceObject;
 import com.wireless.ambeent.mozillaprototype.server.ServerController;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 
@@ -25,7 +27,7 @@ public class WifiApController {
 
 
     private Context mContext;
-    private List<ConnectedDeviceObject> mConnDevObjList;
+    private HashSet<ConnectedDeviceObject> mConnDevObjList;
 
     //Hotspot controller object of external library. Its contents are in 'hotspot' package
     private WifiApManager mWifiApManager;
@@ -36,6 +38,9 @@ public class WifiApController {
     //WifiManager for general purposes
     private WifiManager mWifiManager;
 
+    //A class that handles pinging of the network and finding other connected devices
+    private WifiPinger mWifiPinger;
+
     //When connected to a network, these will be used to check other clients that are connected to network periodically
     private Handler mClientDetectorHandler;
     private Runnable mClientDetectorRunnable;
@@ -45,7 +50,7 @@ public class WifiApController {
 
 
 
-    public WifiApController(Context mContext, List<ConnectedDeviceObject> mConnDevObjList) {
+    public WifiApController(Context mContext, HashSet<ConnectedDeviceObject> mConnDevObjList) {
         this.mContext = mContext;
         this.mConnDevObjList = mConnDevObjList;
 
@@ -61,13 +66,17 @@ public class WifiApController {
 
         mWifiManager = (WifiManager) mContext.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
+        mWifiPinger = new WifiPinger(mContext, mConnDevObjList);
+
         //Update client list every 10 seconds
         mClientDetectorHandler = new Handler();
         mClientDetectorRunnable = new Runnable() {
             @Override
             public void run() {
                 if(mWifiApManager.isWifiApEnabled() || isConnectedToAmbeentMozillaHotspot(mWifiManager)){
-                    updateClientList();
+                    //updateClientList();
+                    Toast.makeText(mContext, "Detected " + mConnDevObjList.size() + " other connected devices", Toast.LENGTH_SHORT).show();
+                    mWifiPinger.startScanning();
                 } else mConnDevObjList.clear();
                 mClientDetectorHandler.postDelayed(this, 10000);
             }
@@ -122,16 +131,16 @@ public class WifiApController {
         //Wifi is not even activated or the ssid is shorter than the prefix
         if(wifiManager.getConnectionInfo().getSSID() == null || wifiManager.getConnectionInfo().getSSID().length() < 15) return false;
 
-        Log.i(TAG, "isConnectedToAmbeentMozillaHotspot: " +wifiManager.getConnectionInfo().getSSID());
+    //    Log.i(TAG, "isConnectedToAmbeentMozillaHotspot: " +wifiManager.getConnectionInfo().getSSID());
 
         String ssidPrefix = wifiManager.getConnectionInfo().getSSID().substring(1,15 ); //Mind the quote marks...
 
 
         if(ssidPrefix.equalsIgnoreCase("AmbeentMozilla")) {
-            Log.i(TAG, "isConnectedToAmbeentMozillaHotspot: true");
+     //       Log.i(TAG, "isConnectedToAmbeentMozillaHotspot: true");
             return true;
         } else {
-            Log.i(TAG, "isConnectedToAmbeentMozillaHotspot: false");
+     //       Log.i(TAG, "isConnectedToAmbeentMozillaHotspot: false");
             return  false;
         }
 
@@ -200,6 +209,10 @@ public class WifiApController {
         if (mReservation != null) {
             mReservation.close();
         }
+    }
+
+    private void pingTheNetwork(){
+
     }
 
     //Pings the network and sets the Connected Device list accordingly

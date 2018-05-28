@@ -33,6 +33,7 @@ import com.wireless.ambeent.mozillaprototype.pojos.MessageObject;
 import com.wireless.ambeent.mozillaprototype.server.ServerController;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import butterknife.ButterKnife;
@@ -51,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     private List<MessageObject> mMessages = new ArrayList<>();
 
     //The list that contains the IP address of other devices that are connected to hotspot
-    private List<ConnectedDeviceObject> mHotspotNeighboursList = new ArrayList<>();
+    private HashSet<ConnectedDeviceObject> mHotspotNeighboursList = new HashSet<>();
 
     //The class that parses messages, insert them to local database and send them.
     private ChatHandler mChatHandler;
