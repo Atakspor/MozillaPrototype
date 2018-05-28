@@ -1,22 +1,30 @@
 package com.wireless.ambeent.mozillaprototype.activities;
 
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.net.wifi.ScanResult;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.wireless.ambeent.mozillaprototype.R;
 import com.wireless.ambeent.mozillaprototype.adapters.ChatAdapter;
 import com.wireless.ambeent.mozillaprototype.businesslogic.ChatHandler;
 import com.wireless.ambeent.mozillaprototype.businesslogic.WifiApController;
+import com.wireless.ambeent.mozillaprototype.businesslogic.WifiScanner;
 import com.wireless.ambeent.mozillaprototype.customviews.CustomRecyclerView;
 import com.wireless.ambeent.mozillaprototype.customviews.EditTextV2;
 import com.wireless.ambeent.mozillaprototype.helpers.Constants;
@@ -51,11 +59,20 @@ public class MainActivity extends AppCompatActivity {
     //The class that controls Hotspot and finds connected devices
     private WifiApController mWifiApController;
 
+    //The class that handles hotspot detection
+    private WifiScanner mWifiScanner;
+
     //A flag the check whether the user is connected to a hotspot that is created by the app
     private boolean isConnectedToAppHotspot = false;
 
+    //List of the hotspots that are created by the app and scanned
+    private List<ScanResult> mHotspotList = new ArrayList<>();
+
     //General purpose handler
     private Handler mHandler;
+
+    //The switch view that controls hotspot
+    private SwitchCompat mSwitchCompat;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         //Set up the PHONE_NUMBER for globall access
-        SharedPreferences sharedPreferences  = getSharedPreferences(Constants.SHARED_PREF, MODE_PRIVATE);
+        SharedPreferences sharedPreferences = getSharedPreferences(Constants.SHARED_PREF, MODE_PRIVATE);
         Constants.PHONE_NUMBER = sharedPreferences.getString(Constants.USER_PHONE_NUMBER, "");
 
         Log.i(TAG, "onCreate: PHONE NUMBER: " + Constants.PHONE_NUMBER);
@@ -73,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
         //TEST STUFFFFFFFFFFFFFFFFFFFF
         String str = "bla!/bla/bla/";
         String str2 = "@+905352989257";
-        String sub = str2.substring(1,14);
+        String sub = str2.substring(1, 14);
         String parts[] = str.split("@");
 
         Log.i(TAG, "onCreate: TEST  " + sub);
@@ -144,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }*/
 
-    private void activityInitialization(){
+    private void activityInitialization() {
 
         //Toolbar setup
         setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
@@ -167,8 +184,14 @@ public class MainActivity extends AppCompatActivity {
         //WifiApController init
         mWifiApController = new WifiApController(this, mHotspotNeighboursList);
 
+        //WifiScanner init
+        mWifiScanner = new WifiScanner(this, mHotspotList);
+        mWifiScanner.startScanning(this);
 
-        final SwitchCompat mSwitchCompat = ButterKnife.findById(this, R.id.switch_Hotspot);
+         mSwitchCompat = ButterKnife.findById(this, R.id.switch_Hotspot);
+
+
+
         mSwitchCompat.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -185,15 +208,17 @@ public class MainActivity extends AppCompatActivity {
                 }, 5000);
 
 
-                if(isChecked){
+                if (isChecked) {
 
                     mWifiApController.turnOnHotspot();
+                    mWifiScanner.stopScanning(MainActivity.this);
 
                     Toast.makeText(MainActivity.this, "Activating Hotspot...", Toast.LENGTH_SHORT).show();
 
                 } else {
 
                     mWifiApController.turnOffHotspot();
+                    mWifiScanner.startScanning(MainActivity.this);
 
                     Toast.makeText(MainActivity.this, "Disabling Hotspot...", Toast.LENGTH_SHORT).show();
 
@@ -206,23 +231,77 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //Checks the hotspot flag. Returns it after creating a suitable Toast.
-    public boolean isTheUserConnectedToHotspot(){
+    public boolean isTheUserConnectedToHotspot() {
 
-        if(isTheUserConnectedToHotspot()) return true;
+        if (isTheUserConnectedToHotspot()) return true;
 
         Toast.makeText(this, getResources().getString(R.string.toast_hotspot_warning), Toast.LENGTH_SHORT).show();
         return false;
     }
 
     //Notifies the ChatAdapter for new elements and scrolls RecyclerView to bottom
-    public void notifyChatAdapter(){
+    public void notifyChatAdapter() {
         mChatAdapter.notifyDataSetChanged();
         CustomRecyclerView mChatRecyclerView = ButterKnife.findById(this, R.id.recyclerView_Chat);
-        mChatRecyclerView.scrollToPosition(mMessages.size() -1);
+        mChatRecyclerView.scrollToPosition(mMessages.size() - 1);
+    }
+
+    //Notifies the WifiAdaoter for new elements
+    public void notifyWifiAdapter() {
+
+    }
+
+    //Creates a dialog box and fills it with detected hotspots. Allows users to select and connect.
+    private void showScannedHotspotDialogBox() {
+
+        //Scan again for refreshing
+        mWifiScanner.scanNow();
+
+        AlertDialog.Builder builderSingle = new AlertDialog.Builder(this);
+        builderSingle.setIcon(R.drawable.ic_action_scan_wifi);
+
+        //Custom title
+        TextView title = new TextView(this);
+        title.setText(getResources().getString(R.string.detected_hotspots));
+        title.setBackgroundColor(getResources().getColor(R.color.colorBlue2));
+        title.setPadding(10, 10, 10, 10);
+        title.setGravity(Gravity.CENTER);
+        title.setTextColor(Color.WHITE);
+        title.setTextSize(20);
+
+        builderSingle.setCustomTitle(title);
+
+        //Add hotspots to adapter
+        final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.select_dialog_singlechoice);
+        for (ScanResult scanResult : mHotspotList) {
+            arrayAdapter.add(scanResult.SSID);
+        }
+
+
+        builderSingle.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        builderSingle.setAdapter(arrayAdapter, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String selectedSsid = arrayAdapter.getItem(which);
+
+                mWifiScanner.connectToHotspot(selectedSsid);
+
+                Toast.makeText(MainActivity.this, getResources().getString(R.string.toast_connecting, selectedSsid), Toast.LENGTH_LONG).show();
+
+            }
+        });
+        builderSingle.show();
+
     }
 
     @OnClick(R.id.imageButton_SendMessage)
-    public void sendMessage(){
+    public void sendMessage() {
 
         //Get the text message from EditText
         EditTextV2 messageEditText = (EditTextV2) ButterKnife.findById(this, R.id.editText_Message);
@@ -242,11 +321,17 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    //Shows the dialog box that is filled with detected hotspots which allow user to connect
     @OnClick(R.id.imageButton_ScanWifi)
-    public void scanWifi(){
-
-     //   mChatHandler.postMessagesToNetwork();
-
+    public void showDetectedHotspots() {
+        if(mWifiApController.isHotspotActivated() && !mWifiScanner.isWifiEnabled()){
+            Toast.makeText(this, getResources().getString(R.string.toast_cannot_scan), Toast.LENGTH_SHORT).show();
+            return;
+        } else if (!mWifiScanner.isWifiEnabled()){
+            Toast.makeText(this, getResources().getString(R.string.toast_wifi_disabled), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        showScannedHotspotDialogBox();
     }
 
 
@@ -254,6 +339,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         isVisible = true;
         notifyChatAdapter();
+
+        //Set switch check depending on hotspot
+        if(mWifiApController.isHotspotActivated()){
+            mSwitchCompat.setChecked(true);
+        }else mSwitchCompat.setChecked(false);
+
 
         ServerController.getInstance().startServer(this);
 
@@ -292,5 +383,7 @@ public class MainActivity extends AppCompatActivity {
         return mChatHandler;
     }
 
-
+    public WifiApController getmWifiApController(){
+        return mWifiApController;
+    }
 }

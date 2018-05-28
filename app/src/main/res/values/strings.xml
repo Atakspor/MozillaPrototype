@@ -1,4 +1,7 @@
-<resources>
+<resources tools:ignore="ExtraTranslation"
+    xmlns:tools="http://schemas.android.com/tools">
+
+
     <string name="app_name">Mozilla Prototype</string>
     <string name="action_settings">Settings</string>
 
@@ -6,6 +9,15 @@
     <string name="accept">Accept</string>
     <string name="ok">Ok</string>
     <string name="cancel">Cancel</string>
+
+    <!-- Hotspot connection dialog box strings -->
+    <string name="detected_hotspots">Select hotspot to connect</string>
+    <string name="toast_connecting">Connecting to %1$s&#8230;</string>
+    <string name="toast_already_connected">You are already connected here</string>
+
+    <string name="toast_cannot_scan">Cannot scan when hotspot is activated</string>
+    <string name="toast_wifi_disabled">Cannot scan when WiFi is disabled</string>
+
 
     <!-- Strings related hints -->
     <string name="hint_type_message">Type a message</string>

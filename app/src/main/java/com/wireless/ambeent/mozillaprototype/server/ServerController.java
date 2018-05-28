@@ -3,6 +3,7 @@ package com.wireless.ambeent.mozillaprototype.server;
 import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -16,6 +17,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import fi.iki.elonen.NanoHTTPD;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class ServerController {
 
@@ -43,6 +48,43 @@ public class ServerController {
         return mServerController;
     }
 
+    //Post request here
+    public static void postRequest(Call<ResponseBody> call) {
+        try {
+            call.enqueue(new Callback<ResponseBody>() {
+                @Override
+                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                    Log.i(TAG, "onResponse: " + response.toString());
+                }
+
+                @Override
+                public void onFailure(Call<ResponseBody> call, Throwable t) {
+                    // something went completely south (like no internet connection)
+                    t.printStackTrace();
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    //Init NanoHTTPD object if it is null
+    private void initServer() throws IOException {
+        if (mServer == null) {
+            mServer = new MyHTTPD();
+
+            final Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+            //        Log.i(TAG, "Server is alive: " +mServer.isAlive() + ". Server is running: " +mServer.wasStarted());
+                    Toast.makeText(mContext, "Server is alive: " +mServer.isAlive() + ". Server is running: " +mServer.wasStarted(), Toast.LENGTH_SHORT).show();
+                    handler.postDelayed(this, 10000);
+                }
+            }, 5000);
+        }
+    }
+
     //Starts the server
     public void startServer(Context context) {
 
@@ -50,7 +92,12 @@ public class ServerController {
         Log.i(TAG, "Starting server... ");
         try {
            initServer();
-           mServer.start();
+
+            //If server was already started, do not start again
+           if(!mServer.wasStarted()) mServer.start();
+
+            Log.i(TAG, "startServer: " + mServer.wasStarted());
+            Log.i(TAG, "startServer: " + mServer.isAlive());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -68,12 +115,7 @@ public class ServerController {
         }
     }
 
-    //Init NanoHTTPD object if it is null
-    private void initServer() throws IOException {
-        if (mServer == null) {
-            mServer = new MyHTTPD();
-        }
-    }
+
 
     private class MyHTTPD extends NanoHTTPD {
 
@@ -98,6 +140,9 @@ public class ServerController {
 
             //Getting the POST data as json
             final String messageObjectListJson = map.get("postData");
+
+            //For manual testing purposes...
+            if(messageObjectListJson.length()<4) return newFixedLengthResponse(response);
 
             Gson gson = new Gson();
             Type objectListType = new TypeToken<ArrayList<MessageObject>>() {

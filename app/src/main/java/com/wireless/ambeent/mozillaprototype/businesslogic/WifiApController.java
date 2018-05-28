@@ -16,6 +16,7 @@ import com.wireless.ambeent.mozillaprototype.server.ServerController;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 //This class is responsible for creating and disabling hotspots, scanning and detecting the hotspots that are created by the application.
 public class WifiApController {
@@ -42,6 +43,8 @@ public class WifiApController {
     //Contains the list of the hotspots that are created by the app
     private List<String> mScannedHotspotSsidList = new ArrayList<>();
 
+
+
     public WifiApController(Context mContext, List<ConnectedDeviceObject> mConnDevObjList) {
         this.mContext = mContext;
         this.mConnDevObjList = mConnDevObjList;
@@ -63,13 +66,16 @@ public class WifiApController {
         mClientDetectorRunnable = new Runnable() {
             @Override
             public void run() {
-                updateClientList();
+                if(mWifiApManager.isWifiApEnabled() || isConnectedToAmbeentMozillaHotspot(mWifiManager)){
+                    updateClientList();
+                } else mConnDevObjList.clear();
                 mClientDetectorHandler.postDelayed(this, 10000);
             }
         };
 
-        checkWriteSettingsPermission();
+        startUpdatingClientList();
 
+        checkWriteSettingsPermission();
 
     }
 
@@ -107,6 +113,31 @@ public class WifiApController {
         stopUpdatingClientList();
     }
 
+    //Checks the connected wifi network and determines whether it is an app-created network
+    public boolean isConnectedToAmbeentMozillaHotspot(WifiManager wifiManager){
+
+        //TODO: Assume that the app has activated the hotspot, therefore it is our hotspot but this is not true. For some reason, ssid cannot be obtained with WifiInfo if hotspot is active, so cheat by returning true here.
+        if(isHotspotActivated()) return true;
+
+        //Wifi is not even activated or the ssid is shorter than the prefix
+        if(wifiManager.getConnectionInfo().getSSID() == null || wifiManager.getConnectionInfo().getSSID().length() < 15) return false;
+
+        Log.i(TAG, "isConnectedToAmbeentMozillaHotspot: " +wifiManager.getConnectionInfo().getSSID());
+
+        String ssidPrefix = wifiManager.getConnectionInfo().getSSID().substring(1,15 ); //Mind the quote marks...
+
+
+        if(ssidPrefix.equalsIgnoreCase("AmbeentMozilla")) {
+            Log.i(TAG, "isConnectedToAmbeentMozillaHotspot: true");
+            return true;
+        } else {
+            Log.i(TAG, "isConnectedToAmbeentMozillaHotspot: false");
+            return  false;
+        }
+
+    }
+
+
     //Checks the WRITE_SETTINGS permission, sends user to permission page is needed
     private void checkWriteSettingsPermission() {
         mWifiApManager.showWritePermissionSettings(false);
@@ -127,6 +158,11 @@ public class WifiApController {
         ServerController.getInstance().stopServer();
 
         mWifiManager.setWifiEnabled(true);
+    }
+
+    //Returns the state of hotspot
+    public boolean isHotspotActivated(){
+        return mWifiApManager.isWifiApEnabled();
     }
 
     //Turning on hotspot for Android O and above
@@ -167,7 +203,7 @@ public class WifiApController {
     }
 
     //Pings the network and sets the Connected Device list accordingly
-    public void updateClientList() {
+    private void updateClientList() {
 
         mWifiApManager.getClientList(false, new FinishScanListener() {
 
@@ -179,20 +215,21 @@ public class WifiApController {
                 ArrayList<ConnectedDeviceObject> connectedDeviceObjects = new ArrayList<>();
 
                 StringBuilder a = new StringBuilder();
-                a.append("WifiApState: " + mWifiApManager.getWifiApState() + "\n\n");
-                a.append("Clients: \n");
+                a.append("WifiApState: " + mWifiApManager.getWifiApState() + "\n");
+        //        a.append("Clients: \n");
                 for (ClientScanResult clientScanResult : clients) {
-                    a.append("####################\n");
+         //           a.append("####################\n");
                     a.append("IpAddr: " + clientScanResult.getIpAddr() + "\n");
-                    a.append("Device: " + clientScanResult.getDevice() + "\n");
-                    a.append("HWAddr: " + clientScanResult.getHWAddr() + "\n");
-                    a.append("isReachable: " + clientScanResult.isReachable() + "\n");
+           //         a.append("Device: " + clientScanResult.getDevice() + "\n");
+          //          a.append("HWAddr: " + clientScanResult.getHWAddr() + "\n");
+          //          a.append("isReachable: " + clientScanResult.isReachable() + "\n");
 
                     ConnectedDeviceObject connectedDeviceObject = new ConnectedDeviceObject(clientScanResult.getHWAddr(), clientScanResult.getIpAddr());
                     connectedDeviceObjects.add(connectedDeviceObject);
                 }
 
                 //Add detected devices to main list.
+
                 mConnDevObjList.clear();
                 mConnDevObjList.addAll(connectedDeviceObjects);
                 Log.i(TAG, "onFinishScan: " + a);
@@ -206,7 +243,11 @@ public class WifiApController {
 
         WifiConfiguration wifiConfig = new WifiConfiguration();
 
-        wifiConfig.SSID = "Test Hotspot";
+        //Generating a random suffix to differentiate hotspots
+        Random random = new Random();
+        int randomSuffix = random.nextInt(9000) +1000;
+
+        wifiConfig.SSID = "AmbeentMozilla-" + String.valueOf(randomSuffix);
 
         // must be 8 length
         wifiConfig.preSharedKey = "abcd1234";
