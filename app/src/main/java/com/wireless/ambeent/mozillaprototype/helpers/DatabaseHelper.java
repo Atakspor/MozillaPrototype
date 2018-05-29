@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import com.wireless.ambeent.mozillaprototype.R;
 import com.wireless.ambeent.mozillaprototype.pojos.MessageObject;
 
 import java.util.ArrayList;
@@ -168,8 +169,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 DatabaseHelper.KEY_MSG_TIMESTAMP};
 
         //Receiver field is not empty
-        String selection = DatabaseHelper.KEY_MESSAGE_ID +"!=?";
-        String[] args = {"null"};
+        String selection = DatabaseHelper.KEY_RECEIVER +"!=?";
+        String[] args = {mContext.getResources().getString(R.string.message_with_no_receiver)};
 
         Cursor cursor = DatabaseHelper.getInstance(mContext).getReadableDatabase()
                 .query(table, columns, selection, args, null, null, null, null);

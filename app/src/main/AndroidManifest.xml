@@ -35,6 +35,7 @@
         <activity
             android:name=".activities.LoginActivity"
             android:screenOrientation="portrait"
+            android:noHistory="true"
             android:theme="@style/AppTheme.NoActionBarBlue">
 
             <intent-filter>

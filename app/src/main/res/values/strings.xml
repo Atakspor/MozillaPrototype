@@ -2,8 +2,12 @@
     xmlns:tools="http://schemas.android.com/tools">
 
 
+
     <string name="app_name">Mozilla Prototype</string>
     <string name="action_settings">Settings</string>
+
+    <!-- most important string here. If a message has this as a receiver, then it is a group message -->
+    <string name="message_with_no_receiver">null</string>
 
     <!-- General purpose strings -->
     <string name="accept">Accept</string>
@@ -17,6 +21,15 @@
 
     <string name="toast_cannot_scan">Cannot scan when hotspot is activated</string>
     <string name="toast_wifi_disabled">Cannot scan when WiFi is disabled</string>
+
+    <!-- Strings related to location permission -->
+    <string name="title_location_permission">Location permission</string>
+    <string name="text_location_permission">The app requires location permission in order to access WiFi settings</string>
+
+
+    <!-- Strings related hints -->
+    <string name="message_to">To: %1$s</string>
+    <string name="message_from">From: %1$s</string>
 
 
     <!-- Strings related hints -->

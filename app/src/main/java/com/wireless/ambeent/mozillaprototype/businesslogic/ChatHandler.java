@@ -7,6 +7,7 @@ import android.provider.ContactsContract;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.wireless.ambeent.mozillaprototype.R;
 import com.wireless.ambeent.mozillaprototype.activities.MainActivity;
 import com.wireless.ambeent.mozillaprototype.helpers.ActivityHelpers;
 import com.wireless.ambeent.mozillaprototype.helpers.Constants;
@@ -126,7 +127,7 @@ public class ChatHandler {
     private void syncEveryMessageWithNetwork() {
 
         //We are not connected to a hotspot. Reset the fields about syncing and return
-        if (mWifiManager.getConnectionInfo() == null || !((MainActivity)mContext).getmWifiApController().isConnectedToAmbeentMozillaHotspot(mWifiManager)) {
+        if (mWifiManager.getConnectionInfo() == null || !((MainActivity)mContext).getmWifiApController().isConnectedToAmbeentMozillaHotspot()) {
             lastSyncedSsid = "";
             syncedDeviceMacSet.clear();
             return;
@@ -181,7 +182,7 @@ public class ChatHandler {
         for (MessageObject messageObject : savedMessages) {
             if (messageObject.getReceiver().equalsIgnoreCase(Constants.PHONE_NUMBER)
                     || messageObject.getSender().equalsIgnoreCase(Constants.PHONE_NUMBER)
-                    || messageObject.getReceiver().equalsIgnoreCase(""))
+                    || messageObject.getReceiver().equalsIgnoreCase(mContext.getResources().getString(R.string.message_with_no_receiver)))
                 mMessages.add(messageObject);
         }
 
@@ -195,7 +196,7 @@ public class ChatHandler {
         //Check the message sender and receiver. If one of them matches with this users phone number or is a group message, add it to list to show on the screen.
         if (message.getReceiver().equalsIgnoreCase(Constants.PHONE_NUMBER)
                 || message.getSender().equalsIgnoreCase(Constants.PHONE_NUMBER)
-                || message.getReceiver().equalsIgnoreCase("")) mMessages.add(message);
+                || message.getReceiver().equalsIgnoreCase(mContext.getResources().getString(R.string.message_with_no_receiver))) mMessages.add(message);
 
         ((MainActivity) mContext).notifyChatAdapter();
 
@@ -212,7 +213,7 @@ public class ChatHandler {
         String sender = Constants.PHONE_NUMBER;
 
         //Create a placeholder receiver string. If it stays the same, then it is a group message
-        String receiver = "null";
+        String receiver = mContext.getResources().getString(R.string.message_with_no_receiver);
 
         //If the message is not targeted, then message and actualMessage are the same.
         //If the message is targeted, the targeting part will be removed

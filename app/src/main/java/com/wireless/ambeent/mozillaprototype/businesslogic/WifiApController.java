@@ -73,10 +73,10 @@ public class WifiApController {
         mClientDetectorRunnable = new Runnable() {
             @Override
             public void run() {
-                if(mWifiApManager.isWifiApEnabled() || isConnectedToAmbeentMozillaHotspot(mWifiManager)){
-                    //updateClientList();
+                if(mWifiApManager.isWifiApEnabled() || isConnectedToAmbeentMozillaHotspot()){
                     Toast.makeText(mContext, "Detected " + mConnDevObjList.size() + " other connected devices", Toast.LENGTH_SHORT).show();
-                    mWifiPinger.startScanning();
+                    updateClientList();
+                    //mWifiPinger.startScanning();
                 } else mConnDevObjList.clear();
                 mClientDetectorHandler.postDelayed(this, 10000);
             }
@@ -90,6 +90,7 @@ public class WifiApController {
 
     //Starts periodical updating of the client list
     public void startUpdatingClientList(){
+        stopUpdatingClientList(); //Prevent multiple callbacks
         mClientDetectorHandler.postDelayed(mClientDetectorRunnable, 1000);
     }
 
@@ -123,23 +124,28 @@ public class WifiApController {
     }
 
     //Checks the connected wifi network and determines whether it is an app-created network
-    public boolean isConnectedToAmbeentMozillaHotspot(WifiManager wifiManager){
+    public boolean isConnectedToAmbeentMozillaHotspot(){
 
         //TODO: Assume that the app has activated the hotspot, therefore it is our hotspot but this is not true. For some reason, ssid cannot be obtained with WifiInfo if hotspot is active, so cheat by returning true here.
-        if(isHotspotActivated()) return true;
+        if(isHotspotActivated()) {
+            startUpdatingClientList();
+            return true;
+        }
 
         //Wifi is not even activated or the ssid is shorter than the prefix
-        if(wifiManager.getConnectionInfo().getSSID() == null || wifiManager.getConnectionInfo().getSSID().length() < 15) return false;
+        if(mWifiManager.getConnectionInfo().getSSID() == null || mWifiManager.getConnectionInfo().getSSID().length() < 15) return false;
 
     //    Log.i(TAG, "isConnectedToAmbeentMozillaHotspot: " +wifiManager.getConnectionInfo().getSSID());
 
-        String ssidPrefix = wifiManager.getConnectionInfo().getSSID().substring(1,15 ); //Mind the quote marks...
+        String ssidPrefix = mWifiManager.getConnectionInfo().getSSID().substring(1,15 ); //Mind the quote marks...
 
 
         if(ssidPrefix.equalsIgnoreCase("AmbeentMozilla")) {
      //       Log.i(TAG, "isConnectedToAmbeentMozillaHotspot: true");
+            startUpdatingClientList();
             return true;
         } else {
+            stopUpdatingClientList();
      //       Log.i(TAG, "isConnectedToAmbeentMozillaHotspot: false");
             return  false;
         }
@@ -232,7 +238,7 @@ public class WifiApController {
         //        a.append("Clients: \n");
                 for (ClientScanResult clientScanResult : clients) {
          //           a.append("####################\n");
-                    a.append("IpAddr: " + clientScanResult.getIpAddr() + "\n");
+                    a.append("IpAddr: " + clientScanResult.getIpAddr() + "  Mac: " + clientScanResult.getHWAddr()+"\n");
            //         a.append("Device: " + clientScanResult.getDevice() + "\n");
           //          a.append("HWAddr: " + clientScanResult.getHWAddr() + "\n");
           //          a.append("isReachable: " + clientScanResult.isReachable() + "\n");
@@ -243,7 +249,7 @@ public class WifiApController {
 
                 //Add detected devices to main list.
 
-                mConnDevObjList.clear();
+        //        mConnDevObjList.clear();
                 mConnDevObjList.addAll(connectedDeviceObjects);
                 Log.i(TAG, "onFinishScan: " + a);
             }

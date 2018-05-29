@@ -88,80 +88,14 @@ public class MainActivity extends AppCompatActivity {
 
         Log.i(TAG, "onCreate: PHONE NUMBER: " + Constants.PHONE_NUMBER);
 
-        //TEST STUFFFFFFFFFFFFFFFFFFFF
-        String str = "bla!/bla/bla/";
-        String str2 = "@+905352989257";
-        String sub = str2.substring(1, 14);
-        String parts[] = str.split("@");
-
-        Log.i(TAG, "onCreate: TEST  " + sub);
 
         activityInitialization();
 
 
 
-
-
-
-
-
-/*
-        IRest taskService = ServiceGenerator.createService(IRest.class, "asd");
-        Call<ResponseBody> loginCall  = taskService.listTasks("asd");
-
-        loginCall.enqueue(new );
-
-        loginPost(loginCall);*/
-
     }
 
-
-   /* public void loginPost(Call<ResponseBody> call)
-    {
-        try
-        {
-            call.enqueue(new Callback<ResultUser>()
-            {
-                @Override
-                public void onResponse(Call<ResultUser> call, Response<ResultUser> response)
-                {
-                    if (response.isSuccessful())
-                    {
-                        resultUser = response.body();
-                        technicianList = resultUser.technicians;
-                        progressDialog.cancel();
-                        if (resultUser.technicians.size() != 0){
-                            Login2 login2Frag = new Login2();
-                            login2Frag.setData(technicianList);
-                            myActivity.startFragment(login2Frag);
-                        }else {
-                            Toast.makeText(myActivity, "Hatalı firma kodu ya da teknisyen bulunamadı", Toast.LENGTH_SHORT).show();
-                        }
-
-
-                    }
-                    else
-                    {
-                        Toast.makeText(myActivity, "Hatalı firma kodu", Toast.LENGTH_SHORT).show();
-                        progressDialog.cancel();
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<ResultUser> call, Throwable t)
-                {
-                    // something went completely south (like no internet connection)
-                    Toast.makeText(myActivity, "Hata 4675", Toast.LENGTH_SHORT).show();
-                    progressDialog.cancel();
-                }
-            });
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-    }*/
-
+    //View and class initializations
     private void activityInitialization() {
 
         //Toolbar setup
@@ -286,12 +220,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //Connect to selected WiFi hotspot
         builderSingle.setAdapter(arrayAdapter, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 String selectedSsid = arrayAdapter.getItem(which);
 
                 mWifiScanner.connectToHotspot(selectedSsid);
+
+                //Start updating client list if not doing it already
+                mWifiApController.startUpdatingClientList();
 
                 Toast.makeText(MainActivity.this, getResources().getString(R.string.toast_connecting, selectedSsid), Toast.LENGTH_LONG).show();
 
@@ -346,6 +284,8 @@ public class MainActivity extends AppCompatActivity {
             mSwitchCompat.setChecked(true);
         }else mSwitchCompat.setChecked(false);
 
+        //Check the connection
+        mWifiApController.isConnectedToAmbeentMozillaHotspot();
 
         ServerController.getInstance().startServer(this);
 

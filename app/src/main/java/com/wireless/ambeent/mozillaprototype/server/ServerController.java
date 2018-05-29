@@ -73,16 +73,34 @@ public class ServerController {
         if (mServer == null) {
             mServer = new MyHTTPD();
 
-            final Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    Log.i(TAG, "Server is alive: " +mServer.isAlive() + ". Server is running: " +mServer.wasStarted());
-            //        Toast.makeText(mContext, "Server is alive: " +mServer.isAlive() + ". Server is running: " +mServer.wasStarted(), Toast.LENGTH_SHORT).show();
-                    handler.postDelayed(this, 10000);
-                }
-            }, 5000);
+            runServerDiagnostics();
         }
+    }
+
+    //Checks the health of the server. If it is not alive when the app is open, restart it
+    public void runServerDiagnostics(){
+
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Log.i(TAG, "Server is alive: " +mServer.isAlive() + ". Server is running: " +mServer.wasStarted());
+
+                if(!mServer.isAlive()){
+                    Log.i(TAG, "Server diagnostics: Restarting server...");
+                    mServer.stop();
+                    try {
+                        mServer.start();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                //        Toast.makeText(mContext, "Server is alive: " +mServer.isAlive() + ". Server is running: " +mServer.wasStarted(), Toast.LENGTH_SHORT).show();
+                handler.postDelayed(this, 10000);
+            }
+        }, 5000);
+
     }
 
     //Starts the server
@@ -94,10 +112,11 @@ public class ServerController {
            initServer();
 
             //If server was already started, do not start again
-           if(!mServer.wasStarted()) mServer.start();
+           if(!mServer.wasStarted()){
+               mServer.start();
+               Log.i(TAG, "startServer: " + mServer.wasStarted());
+           }
 
-            Log.i(TAG, "startServer: " + mServer.wasStarted());
-            Log.i(TAG, "startServer: " + mServer.isAlive());
         } catch (IOException e) {
             e.printStackTrace();
         }
