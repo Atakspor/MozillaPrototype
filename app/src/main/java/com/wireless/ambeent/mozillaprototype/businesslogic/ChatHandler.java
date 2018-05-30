@@ -12,6 +12,7 @@ import com.wireless.ambeent.mozillaprototype.activities.MainActivity;
 import com.wireless.ambeent.mozillaprototype.helpers.ActivityHelpers;
 import com.wireless.ambeent.mozillaprototype.helpers.Constants;
 import com.wireless.ambeent.mozillaprototype.helpers.DatabaseHelper;
+import com.wireless.ambeent.mozillaprototype.helpers.FirebaseDatabaseHelper;
 import com.wireless.ambeent.mozillaprototype.httprequests.IRest;
 import com.wireless.ambeent.mozillaprototype.httprequests.RetrofitRequester;
 import com.wireless.ambeent.mozillaprototype.pojos.ConnectedDeviceObject;
@@ -90,6 +91,8 @@ public class ChatHandler {
 
         Log.i(TAG, "sendMessage: " + messageObject);
 
+        //If there is internet connection and if the message is a targeted message, push the message to Firebase Database
+        if(messageObject.hasReceiver()) FirebaseDatabaseHelper.pushMessageToFirebase(messageObject);
     }
 
     //Send the given message list to everyone in the same network

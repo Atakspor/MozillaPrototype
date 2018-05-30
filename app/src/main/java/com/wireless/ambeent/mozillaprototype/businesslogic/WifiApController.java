@@ -187,6 +187,8 @@ public class WifiApController {
 
         WifiManager manager = (WifiManager) mContext.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
+
+
         manager.startLocalOnlyHotspot(new WifiManager.LocalOnlyHotspotCallback() {
 
             @Override
@@ -194,6 +196,8 @@ public class WifiApController {
                 super.onStarted(reservation);
                 Log.d(TAG, "Wifi Hotspot is on now");
                 mReservation = reservation;
+            //    mReservation.getWifiConfiguration() = initHotspotConfig();
+
             }
 
             @Override

@@ -99,4 +99,11 @@ public class MessageObject {
 
         return Objects.hash(id);
     }
+
+    public boolean hasReceiver(){
+
+        return !receiver.equalsIgnoreCase("null");
+
+    }
+
 }

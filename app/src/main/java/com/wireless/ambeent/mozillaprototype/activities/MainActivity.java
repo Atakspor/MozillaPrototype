@@ -14,12 +14,12 @@ import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.FirebaseApp;
 import com.wireless.ambeent.mozillaprototype.R;
 import com.wireless.ambeent.mozillaprototype.adapters.ChatAdapter;
 import com.wireless.ambeent.mozillaprototype.businesslogic.ChatHandler;
@@ -28,6 +28,7 @@ import com.wireless.ambeent.mozillaprototype.businesslogic.WifiScanner;
 import com.wireless.ambeent.mozillaprototype.customviews.CustomRecyclerView;
 import com.wireless.ambeent.mozillaprototype.customviews.EditTextV2;
 import com.wireless.ambeent.mozillaprototype.helpers.Constants;
+import com.wireless.ambeent.mozillaprototype.helpers.FirebaseDatabaseHelper;
 import com.wireless.ambeent.mozillaprototype.pojos.ConnectedDeviceObject;
 import com.wireless.ambeent.mozillaprototype.pojos.MessageObject;
 import com.wireless.ambeent.mozillaprototype.server.ServerController;
@@ -82,12 +83,6 @@ public class MainActivity extends AppCompatActivity {
 
         ButterKnife.bind(this);
 
-        //Set up the PHONE_NUMBER for globall access
-        SharedPreferences sharedPreferences = getSharedPreferences(Constants.SHARED_PREF, MODE_PRIVATE);
-        Constants.PHONE_NUMBER = sharedPreferences.getString(Constants.USER_PHONE_NUMBER, "");
-
-        Log.i(TAG, "onCreate: PHONE NUMBER: " + Constants.PHONE_NUMBER);
-
 
         activityInitialization();
 
@@ -97,6 +92,13 @@ public class MainActivity extends AppCompatActivity {
 
     //View and class initializations
     private void activityInitialization() {
+
+        //Set up the PHONE_NUMBER for globall access
+        SharedPreferences sharedPreferences = getSharedPreferences(Constants.SHARED_PREF, MODE_PRIVATE);
+        Constants.PHONE_NUMBER = sharedPreferences.getString(Constants.USER_PHONE_NUMBER, "");
+        Log.i(TAG, "onCreate: PHONE NUMBER: " + Constants.PHONE_NUMBER);
+
+
 
         //Toolbar setup
         setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
@@ -123,10 +125,8 @@ public class MainActivity extends AppCompatActivity {
         mWifiScanner = new WifiScanner(this, mHotspotList);
         mWifiScanner.startScanning(this);
 
+        //Switch view that controls hotspot
          mSwitchCompat = ButterKnife.findById(this, R.id.switch_Hotspot);
-
-
-
         mSwitchCompat.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -158,10 +158,13 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "Disabling Hotspot...", Toast.LENGTH_SHORT).show();
 
                 }
-
-
             }
         });
+
+        //When the app is launched, try to sync messages with Firebase if there is internet connection
+        FirebaseApp.initializeApp(this);
+        FirebaseDatabaseHelper.pushMessagesToFirebase(this);
+        FirebaseDatabaseHelper.initPrivateMessageListener(this, sharedPreferences);
 
     }
 
@@ -306,6 +309,7 @@ public class MainActivity extends AppCompatActivity {
         isVisible = false;
 
         ServerController.getInstance().stopServer();
+        mWifiApController.stopUpdatingClientList();
 
         Log.i(TAG, "Lifecycle: onPause ");
         super.onPause();
