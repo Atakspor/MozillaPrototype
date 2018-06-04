@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
     private HashSet<ConnectedDeviceObject> mHotspotNeighboursList = new HashSet<>();
 
     //The class that parses messages, insert them to local database and send them.
-    private ChatHandler mChatHandler;
+    public static ChatHandler mChatHandler;
 
     //The class that controls Hotspot and finds connected devices
     private WifiApController mWifiApController;
@@ -161,10 +161,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //All views are initialized. Make this true.
+        isVisible = true;
+
         //When the app is launched, try to sync messages with Firebase if there is internet connection
         FirebaseApp.initializeApp(this);
         FirebaseDatabaseHelper.pushMessagesToFirebase(this);
-        FirebaseDatabaseHelper.initPrivateMessageListener(this, sharedPreferences);
+        FirebaseDatabaseHelper.initPrivateMessageListener(this);
+        FirebaseDatabaseHelper.fetchEveryMessage(this);
 
     }
 

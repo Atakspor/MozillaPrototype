@@ -48,6 +48,8 @@ public class WifiApController {
     //Contains the list of the hotspots that are created by the app
     private List<String> mScannedHotspotSsidList = new ArrayList<>();
 
+    //The flag to keep track of client updates
+    private boolean isClientsGetingUpdated = false;
 
 
     public WifiApController(Context mContext, HashSet<ConnectedDeviceObject> mConnDevObjList) {
@@ -90,13 +92,18 @@ public class WifiApController {
 
     //Starts periodical updating of the client list
     public void startUpdatingClientList(){
-        stopUpdatingClientList(); //Prevent multiple callbacks
-        mClientDetectorHandler.postDelayed(mClientDetectorRunnable, 1000);
+        if(!isClientsGetingUpdated){
+            mClientDetectorHandler.postDelayed(mClientDetectorRunnable, 1000);
+            isClientsGetingUpdated = true;
+        }
     }
 
     //Stops periodical updating of the client list
     public void stopUpdatingClientList(){
-        mClientDetectorHandler.removeCallbacks(mClientDetectorRunnable);
+        if (isClientsGetingUpdated) {
+            mClientDetectorHandler.removeCallbacks(mClientDetectorRunnable);
+            isClientsGetingUpdated = false;
+        }
     }
 
     //Decides which methods to call to enable hotspot

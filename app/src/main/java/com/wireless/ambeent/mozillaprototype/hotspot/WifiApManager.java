@@ -182,7 +182,7 @@ public class WifiApManager {
 
                             if (mac.matches("..:..:..:..:..:..")) {
                                 boolean isReachable = InetAddress.getByName(splitted[0]).isReachable(reachableTimeout);
-                                Log.i("TESTTEST", "run: " + splitted[0]);
+                             //   Log.i("TESTTEST", "run: " + splitted[0]);
 
                                 if (!onlyReachables || isReachable) {
                                     result.add(new ClientScanResult(splitted[0], splitted[3], splitted[5], isReachable));

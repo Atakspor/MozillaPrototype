@@ -77,7 +77,6 @@ public class ChatHandler {
     //Put the necessary methods in order to send a message
     public void sendMessage(String message) {
 
-
         MessageObject messageObject = createMessageObject(message);
         DatabaseHelper.insertMessageToSQLite(mContext, messageObject);
 
@@ -194,7 +193,7 @@ public class ChatHandler {
     }
 
     //Updates the message list with only the given object
-    private void updateMessageList(MessageObject message) {
+    public void updateMessageList(MessageObject message) {
 
         //Check the message sender and receiver. If one of them matches with this users phone number or is a group message, add it to list to show on the screen.
         if (message.getReceiver().equalsIgnoreCase(Constants.PHONE_NUMBER)
